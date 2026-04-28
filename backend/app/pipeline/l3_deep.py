@@ -1,7 +1,7 @@
 import asyncio
 import json
 import os
-from app.models import Profile, ScenarioResult, CompatibilityReport
+from app.models import Profile, ScenarioResult, CompatibilityReport, BestMatch
 from app.graph.builder import run_simulation
 from app.graph.state import SimulationState
 from app.scenarios.definitions import SCENARIOS
@@ -9,7 +9,7 @@ from app.scoring.judges import judge_chemistry, judge_values
 from app.scoring.aggregator import aggregate
 from app.config import settings
 
-N_LOOPS = 10  # simulations per scenario
+N_LOOPS = 10
 
 async def _run_sim(pa: Profile, pb: Profile, scenario: dict, sem: asyncio.Semaphore) -> list[dict]:
     async with sem:
@@ -34,38 +34,31 @@ async def _judge_transcript(transcript, pa_d, pb_d, sem: asyncio.Semaphore) -> l
         return list(scores)
 
 async def _quick_score(pa: Profile, pb: Profile, sem: asyncio.Semaphore) -> float:
-    """Single scenario × 1 sim × 2 judges — fast candidate screening."""
-    scenario = SCENARIOS[0]  # first_coffee
+    scenario = SCENARIOS[0]  # first_coffee — fastest
     transcript = await _run_sim(pa, pb, scenario, sem)
     scores = await asyncio.gather(
         judge_chemistry(transcript, pa.model_dump(), pb.model_dump()),
         judge_values(transcript, pa.model_dump(), pb.model_dump()),
     )
-    return sum(s.overall for s in scores) / len(scores)
+    return sum(s.overall for s in scores) / 2
 
-async def _find_best_matches(
-    pa: Profile, pb: Profile, all_profiles: list[Profile], sem: asyncio.Semaphore
-) -> dict:
-    """For each person, score against every other candidate and return top 2."""
-    candidates = [p for p in all_profiles if p.name not in (pa.name, pb.name)]
-
-    async def score_pair(person: Profile, candidate: Profile):
+async def _find_best_matches(pa: Profile, pb: Profile, candidates: list[Profile], sem: asyncio.Semaphore) -> dict:
+    async def score_one(person: Profile, candidate: Profile):
         try:
             s = await _quick_score(person, candidate, sem)
-            return {"name": candidate.name, "score": round(s, 1),
-                    "bio": candidate.bio[:100], "tag": candidate.communication_style}
-        except Exception:
+            return BestMatch(name=candidate.name, score=round(s, 1),
+                             bio=candidate.bio[:100], tag=candidate.communication_style)
+        except Exception as e:
             return None
 
-    pa_tasks = [score_pair(pa, c) for c in candidates]
-    pb_tasks = [score_pair(pb, c) for c in candidates]
+    others = [p for p in candidates if p.name not in (pa.name, pb.name)]
 
-    pa_results = [r for r in await asyncio.gather(*pa_tasks) if r]
-    pb_results = [r for r in await asyncio.gather(*pb_tasks) if r]
+    pa_scores = [r for r in await asyncio.gather(*[score_one(pa, c) for c in others]) if r]
+    pb_scores = [r for r in await asyncio.gather(*[score_one(pb, c) for c in others]) if r]
 
     return {
-        "pa_best": sorted(pa_results, key=lambda x: x["score"], reverse=True)[:2],
-        "pb_best": sorted(pb_results, key=lambda x: x["score"], reverse=True)[:2],
+        "pa_best": sorted(pa_scores, key=lambda x: x.score, reverse=True)[:2],
+        "pb_best": sorted(pb_scores, key=lambda x: x.score, reverse=True)[:2],
     }
 
 def _load_all_profiles() -> list[Profile]:
@@ -73,27 +66,19 @@ def _load_all_profiles() -> list[Profile]:
     with open(os.path.abspath(path)) as f:
         return [Profile(**p) for p in json.load(f)]
 
-async def run_l3_deep_match(
-    pa: Profile, pb: Profile,
-    n_sims: int | None = None,
-    on_progress=None
-) -> CompatibilityReport:
+async def run_l3_deep_match(pa: Profile, pb: Profile, n_sims=None, on_progress=None) -> CompatibilityReport:
     n = n_sims or N_LOOPS
     sem = asyncio.Semaphore(settings.llm_concurrency)
-    pa_d = pa.model_dump()
-    pb_d = pb.model_dump()
+    pa_d, pb_d = pa.model_dump(), pb.model_dump()
 
     scenario_results = []
     for i, scenario in enumerate(SCENARIOS):
         if on_progress:
-            on_progress(f"scenario {i+1}/{len(SCENARIOS)}: {scenario['name']} ({n} loops)")
+            on_progress(f"scenario {i+1}/6: {scenario['name']} ({n} loops)")
 
-        # run N simulations concurrently
         transcripts = await asyncio.gather(*[_run_sim(pa, pb, scenario, sem) for _ in range(n)])
-
-        # judge each transcript (2 judges each)
-        judge_batches = await asyncio.gather(*[_judge_transcript(t, pa_d, pb_d, sem) for t in transcripts])
-        all_scores = [s for batch in judge_batches for s in batch]
+        batches = await asyncio.gather(*[_judge_transcript(t, pa_d, pb_d, sem) for t in transcripts])
+        all_scores = [s for b in batches for s in b]
 
         scenario_results.append(ScenarioResult(
             scenario_id=scenario["id"],
@@ -106,16 +91,14 @@ async def run_l3_deep_match(
 
     report = await aggregate(scenario_results, pa, pb)
 
-    # best-match scan against the full pool
     if on_progress:
         on_progress("scanning candidate pool for best matches...")
-    try:
-        all_profiles = _load_all_profiles()
-        best = await _find_best_matches(pa, pb, all_profiles, sem)
-        report.pa_best_matches = best["pa_best"]
-        report.pb_best_matches = best["pb_best"]
-    except Exception:
-        report.pa_best_matches = []
-        report.pb_best_matches = []
 
-    return report
+    all_profiles = _load_all_profiles()
+    best = await _find_best_matches(pa, pb, all_profiles, sem)
+
+    # rebuild report with best matches included (Pydantic model_copy)
+    return report.model_copy(update={
+        "pa_best_matches": best["pa_best"],
+        "pb_best_matches": best["pb_best"],
+    })

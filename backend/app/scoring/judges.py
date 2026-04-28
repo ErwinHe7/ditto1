@@ -1,4 +1,5 @@
 import json
+import asyncio
 from app.models import JudgeScore
 from app.agents.llm import chat, JUDGE_CHEMISTRY_MODEL, JUDGE_VALUES_MODEL
 
@@ -23,26 +24,42 @@ def _fmt_transcript(transcript, pa, pb) -> str:
 
 def _parse(raw: str, judge_id: str) -> JudgeScore:
     raw = raw.strip()
+    if not raw:
+        raise ValueError(f"Empty response from {judge_id}")
     if "```" in raw:
         raw = raw.split("```")[1]
         if raw.startswith("json"):
             raw = raw[4:]
     start, end = raw.find("{"), raw.rfind("}") + 1
+    if start == -1 or end == 0:
+        raise ValueError(f"No JSON object found in {judge_id} response: {raw[:100]}")
     d = json.loads(raw[start:end])
     return JudgeScore(judge_id=judge_id, **d)
 
+async def _call_with_retry(msgs, model, judge_id, retries=3) -> str:
+    for attempt in range(retries):
+        try:
+            raw = await chat(msgs, model=model, temperature=0.3, max_tokens=400, json_mode=True)
+            if raw and raw.strip():
+                return raw
+        except Exception as e:
+            if attempt == retries - 1:
+                raise
+            await asyncio.sleep(1 * (attempt + 1))
+    raise ValueError(f"{judge_id} returned empty after {retries} attempts")
+
 async def judge_chemistry(transcript, pa, pb) -> JudgeScore:
     text = _fmt_transcript(transcript, pa, pb)
-    raw = await chat(
+    raw = await _call_with_retry(
         [{"role": "system", "content": CHEMISTRY_SYS}, {"role": "user", "content": text}],
-        model=JUDGE_CHEMISTRY_MODEL, temperature=0.3, max_tokens=400, json_mode=True
+        JUDGE_CHEMISTRY_MODEL, "chemistry"
     )
     return _parse(raw, "chemistry")
 
 async def judge_values(transcript, pa, pb) -> JudgeScore:
     text = _fmt_transcript(transcript, pa, pb)
-    raw = await chat(
+    raw = await _call_with_retry(
         [{"role": "system", "content": VALUES_SYS}, {"role": "user", "content": text}],
-        model=JUDGE_VALUES_MODEL, temperature=0.3, max_tokens=400, json_mode=True
+        JUDGE_VALUES_MODEL, "values"
     )
     return _parse(raw, "values")
