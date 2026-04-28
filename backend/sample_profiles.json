@@ -1,0 +1,90 @@
+[
+  {
+    "name": "Maya",
+    "age": 22,
+    "gender": "female",
+    "bio": "Design student at RISD. I spend too much time in museums and not enough time sleeping. I notice details other people miss — the font on a menu, the light at 4pm in October. Looking for someone who gets why that matters.",
+    "interests": ["typography", "film photography", "ceramics", "indie music", "thrift stores", "journaling", "ramen"],
+    "communication_style": "thoughtful, asks deep questions, comfortable with silence",
+    "values": ["creativity", "authenticity", "emotional depth", "independence"],
+    "deal_breakers": ["dismissive of art", "always on phone"],
+    "looking_for": "Someone who makes me think differently and doesn't rush through life"
+  },
+  {
+    "name": "Jordan",
+    "age": 23,
+    "gender": "male",
+    "bio": "Finance analyst by day, pickup basketball by night. I'm competitive about everything — including how fast I can make you laugh. I'm building something on the side and yes I have a 5-year plan.",
+    "interests": ["basketball", "investing", "sneakers", "comedy podcasts", "grilling", "fantasy football", "road trips"],
+    "communication_style": "playful, sarcastic, high energy, fast texter",
+    "values": ["ambition", "loyalty", "family", "work ethic"],
+    "deal_breakers": ["no sense of humor", "flaky"],
+    "looking_for": "Someone who can keep up and also slow me down when I need it"
+  },
+  {
+    "name": "Sam",
+    "age": 21,
+    "gender": "non-binary",
+    "bio": "CS major who'd rather talk about consciousness than code. Currently building a weird little app and reading too much philosophy. I think slowly and feel deeply.",
+    "interests": ["philosophy", "machine learning", "chess", "hiking", "sci-fi novels", "cooking", "meditation"],
+    "communication_style": "gentle, curious, tends to ask follow-up questions, occasional dry humor",
+    "values": ["curiosity", "honesty", "kindness", "growth"],
+    "deal_breakers": ["closed-minded", "unkind to strangers"],
+    "looking_for": "A genuine connection with someone interested in the world"
+  },
+  {
+    "name": "Riley",
+    "age": 24,
+    "gender": "female",
+    "bio": "Ski instructor winters, freelance travel writer summers. I've lived in 4 cities in 3 years and I'm not done. My dog is my best friend and that's non-negotiable.",
+    "interests": ["skiing", "writing", "travel", "dogs", "live music", "surfing", "campfires", "vintage markets"],
+    "communication_style": "warm, spontaneous, storyteller, uses voice notes more than texts",
+    "values": ["adventure", "authenticity", "freedom", "compassion"],
+    "deal_breakers": ["hates animals", "rigid routines"],
+    "looking_for": "Someone adventurous who also knows how to sit still"
+  },
+  {
+    "name": "Ethan",
+    "age": 25,
+    "gender": "male",
+    "bio": "Software engineer at a Series B startup. I shipped my first iOS app at 16 and haven't stopped building. I'm learning to be less in my head and more in the room. Terrible at small talk, great at 2am deep dives.",
+    "interests": ["open source", "mechanical keyboards", "chess", "bouldering", "sci-fi", "cold brew", "DIY electronics"],
+    "communication_style": "nerdy, precise, gets excited and talks fast, takes a while to warm up",
+    "values": ["curiosity", "craft", "honesty", "continuous learning"],
+    "deal_breakers": ["anti-intellectual", "drama"],
+    "looking_for": "Someone who finds my obsessions at least a little bit interesting"
+  },
+  {
+    "name": "Zoe",
+    "age": 22,
+    "gender": "female",
+    "bio": "Philosophy major with a minor in art history. I argue for fun and mean it as affection. I think most people are more interesting than they let on — I'm trying to find out.",
+    "interests": ["ethics", "contemporary art", "theatre", "long walks", "poetry", "bookstores", "documentary film"],
+    "communication_style": "intellectually playful, challenges ideas, warm underneath the debate",
+    "values": ["truth", "beauty", "justice", "depth of thought"],
+    "deal_breakers": ["incurious", "sycophantic"],
+    "looking_for": "Someone who disagrees with me well"
+  },
+  {
+    "name": "Marcus",
+    "age": 26,
+    "gender": "male",
+    "bio": "High school history teacher by day, semi-pro ultimate frisbee player on weekends. I care deeply about education equity. I'm annoyingly optimistic and I make a mean chicken tikka masala.",
+    "interests": ["ultimate frisbee", "history", "cooking", "tutoring kids", "podcasts", "camping", "board games"],
+    "communication_style": "warm, enthusiastic, tells long stories, really listens",
+    "values": ["community", "education", "fairness", "joy"],
+    "deal_breakers": ["cynical about everything", "doesn't care about people"],
+    "looking_for": "Someone to build a life with — adventures included"
+  },
+  {
+    "name": "Aria",
+    "age": 23,
+    "gender": "female",
+    "bio": "Sports science PhD candidate. I think about human performance the way other people think about movies. I run marathons and lift heavy things. I'm competitive but I root for everyone.",
+    "interests": ["running", "strength training", "sports psychology", "nutrition", "yoga", "hiking", "fantasy football"],
+    "communication_style": "direct, energetic, motivating, calls people out with love",
+    "values": ["discipline", "growth", "health", "team spirit"],
+    "deal_breakers": ["passive about their own life", "unhealthy lifestyle"],
+    "looking_for": "A partner who has their own thing going and shows up fully"
+  }
+]

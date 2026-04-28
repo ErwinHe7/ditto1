@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+.env
+backend/demo_report.json
+
+# Node
+node_modules/
+.next/
+frontend/.env.local
+
+# OS
+.DS_Store
+Thumbs.db
