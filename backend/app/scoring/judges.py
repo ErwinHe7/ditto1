@@ -40,7 +40,7 @@ def _parse(raw: str, judge_id: str) -> JudgeScore:
 async def _call_with_retry(msgs, model, judge_id, retries=3) -> str:
     for attempt in range(retries):
         try:
-            raw = await chat(msgs, model=model, temperature=0.3, max_tokens=400, json_mode=True)
+            raw = await chat(msgs, model=model, temperature=0.3, max_tokens=350, json_mode=True)
             if raw and raw.strip():
                 return raw
         except Exception as e:

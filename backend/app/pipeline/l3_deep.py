@@ -9,7 +9,7 @@ from app.scoring.judges import judge_chemistry, judge_values
 from app.scoring.aggregator import aggregate
 from app.config import settings
 
-N_LOOPS = 10
+N_LOOPS = 5
 
 async def _run_sim(pa: Profile, pb: Profile, scenario: dict, sem: asyncio.Semaphore) -> list[dict]:
     async with sem:
@@ -69,7 +69,7 @@ def _load_all_profiles() -> list[Profile]:
 
 async def run_l3_deep_match(pa: Profile, pb: Profile, n_sims=None, on_progress=None) -> CompatibilityReport:
     n = n_sims or N_LOOPS
-    sem = asyncio.Semaphore(settings.llm_concurrency)
+    sem = asyncio.Semaphore(30)
     pa_d, pb_d = pa.model_dump(), pb.model_dump()
 
     scenario_results = []

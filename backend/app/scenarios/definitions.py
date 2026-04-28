@@ -7,7 +7,7 @@ SCENARIOS = [
             "You're meeting in person for the first time at a coffee shop on a Saturday afternoon. "
             "You arrived 2 minutes ago. Start naturally — small talk, observation, anything human."
         ),
-        "max_turns": 8,
+        "max_turns": 4,
     },
     {
         "id": "late_night_vulnerable",
@@ -18,7 +18,7 @@ SCENARIOS = [
             "One of you is going to share something real — a fear, a regret, a memory that still hurts. "
             "Let it unfold honestly."
         ),
-        "max_turns": 10,
+        "max_turns": 5,
     },
     {
         "id": "minor_conflict",
@@ -29,7 +29,7 @@ SCENARIOS = [
             "career ambition, family, politics, or how to spend a weekend. "
             "Both of you actually care about this. Don't fake-agree."
         ),
-        "max_turns": 8,
+        "max_turns": 4,
     },
     {
         "id": "travel_planning",
@@ -39,7 +39,7 @@ SCENARIOS = [
             "You're planning a 4-day trip together for next month. Budget is tight. "
             "Decide where to go, what to do, where to stay. Be honest about preferences."
         ),
-        "max_turns": 8,
+        "max_turns": 4,
     },
     {
         "id": "meet_friends",
@@ -50,7 +50,7 @@ SCENARIOS = [
             "Friend A is showing you off a little. The friends are curious but warm. "
             "How do you handle it together? Banter, side comments, eye contact welcome."
         ),
-        "max_turns": 10,
+        "max_turns": 5,
     },
     {
         "id": "support_under_stress",
@@ -60,6 +60,6 @@ SCENARIOS = [
             "One of you had a genuinely hard day — work disaster, family stress, or grief. "
             "You're seeing each other tonight. Show how you support / are supported. No advice unless asked."
         ),
-        "max_turns": 8,
+        "max_turns": 4,
     },
 ]
