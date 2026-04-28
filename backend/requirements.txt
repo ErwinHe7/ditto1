@@ -1,5 +1,5 @@
 fastapi>=0.109
-uvicorn
+uvicorn[standard]
 pydantic>=2.0
 pydantic-settings
 langgraph>=0.2
@@ -10,3 +10,5 @@ redis
 celery
 httpx
 python-dotenv
+psycopg2-binary
+sqlalchemy
