@@ -41,6 +41,8 @@ export interface CompatibilityReport {
   confidence: number
   recommendation: "strong_match" | "promising" | "uncertain" | "skip"
   summary: string
+  pa_best_matches: BestMatch[]
+  pb_best_matches: BestMatch[]
 }
 
 export interface MatchStatus {
@@ -55,6 +57,7 @@ export interface BestMatch {
   name: string
   score: number
   bio: string
+  tag: string
 }
 
 export async function startMatch(pa: Profile, pb: Profile): Promise<{ job_id: string }> {

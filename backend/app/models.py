@@ -30,6 +30,12 @@ class ScenarioResult(BaseModel):
     avg_score: float = 0.0
     trimmed_avg_score: float = 0.0
 
+class BestMatch(BaseModel):
+    name: str
+    score: float
+    bio: str
+    tag: str = ""
+
 class CompatibilityReport(BaseModel):
     profile_a: Profile
     profile_b: Profile
@@ -39,3 +45,5 @@ class CompatibilityReport(BaseModel):
     confidence: float
     recommendation: Literal["strong_match", "promising", "uncertain", "skip"]
     summary: str
+    pa_best_matches: list[BestMatch] = []
+    pb_best_matches: list[BestMatch] = []

@@ -21,19 +21,13 @@ async def aggregate(scenario_results: list[ScenarioResult], pa: Profile, pb: Pro
     for sr in scenario_results:
         scores = [s.overall for s in sr.judge_scores]
         sr.avg_score = round(statistics.mean(scores), 1) if scores else 50.0
-        # trimmed: drop highest + lowest if 3+ judges
-        if len(scores) >= 3:
-            sr.trimmed_avg_score = round(statistics.mean(sorted(scores)[1:-1]), 1)
-        else:
-            sr.trimmed_avg_score = sr.avg_score
+        # with 2 judges trimmed = avg of the two (no outlier to drop); keep field consistent
+        sr.trimmed_avg_score = sr.avg_score
 
     overall = round(statistics.mean(all_overalls)) if all_overalls else 50
     std = statistics.stdev(all_overalls) if len(all_overalls) > 1 else 15
     confidence = round(max(0.1, min(1.0, 1.0 - std / 40)), 2)
-
-    # trimmed overall: per-scenario trimmed avg
-    trimmed_overalls = [sr.trimmed_avg_score for sr in scenario_results]
-    trimmed_overall = round(statistics.mean(trimmed_overalls)) if trimmed_overalls else overall
+    trimmed_overall = overall  # same for 2 judges
 
     if overall >= 75 and confidence >= 0.7:
         rec = "strong_match"

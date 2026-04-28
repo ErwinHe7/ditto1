@@ -4,8 +4,7 @@ from app.config import settings
 REPLICA_MODEL = "anthropic/claude-sonnet-4.5"       # persona agents
 JUDGE_CHEMISTRY_MODEL = "openai/gpt-5.5"            # chemistry judge
 JUDGE_VALUES_MODEL = "anthropic/claude-opus-4.7"    # values judge
-JUDGE_HOLISTIC_MODEL = "google/gemini-3-flash-preview"  # holistic judge (replaces gpt-4o-mini)
-SUMMARY_MODEL = "google/gemini-3-flash-preview"
+SUMMARY_MODEL = "anthropic/claude-sonnet-4.5"
 
 def get_client() -> AsyncOpenAI:
     return AsyncOpenAI(

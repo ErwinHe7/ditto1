@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { getMatch, getMatch as pollJob, startBestMatches, type CompatibilityReport, type ScenarioResult, type JudgeScore, type BestMatch } from "@/lib/api"
+import { getMatch, type CompatibilityReport, type ScenarioResult, type JudgeScore, type BestMatch } from "@/lib/api"
 
 const REC = {
   strong_match: { label: "Strong Match — go on a real date", color: "#22c55e", glow: "rgba(34,197,94,0.4)" },
@@ -14,7 +14,6 @@ const REC = {
 const JUDGE_LABELS: Record<string, string> = {
   chemistry: "GPT-5.5 — Chemistry",
   values: "Claude Opus 4.7 — Values",
-  holistic: "Gemini 3 Flash — Holistic",
 }
 
 const SCENARIO_ICONS: Record<string, string> = {
@@ -251,7 +250,6 @@ export default function ResultPage() {
   const [progress, setProgress] = useState("")
   const [report, setReport] = useState<CompatibilityReport | null>(null)
   const [errDetail, setErrDetail] = useState("")
-  const [bestMatches, setBestMatches] = useState<{ pa_best: BestMatch[]; pb_best: BestMatch[] } | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
@@ -262,24 +260,6 @@ export default function ResultPage() {
       if (data.report) {
         setReport(data.report as CompatibilityReport)
         clearInterval(intervalRef.current!)
-        // kick off best-match scan
-        try {
-          const allProfiles = JSON.parse(sessionStorage.getItem("all_profiles") || "[]")
-          const pa = JSON.parse(sessionStorage.getItem("pa") || "null")
-          const pb = JSON.parse(sessionStorage.getItem("pb") || "null")
-          if (pa && pb && allProfiles.length > 2) {
-            const { job_id: bmId } = await startBestMatches(pa, pb, allProfiles)
-            // poll best-match job
-            const bmInterval = setInterval(async () => {
-              const bm = await pollJob(bmId)
-              if (bm.status === "done" && bm.report) {
-                setBestMatches(bm.report as { pa_best: BestMatch[]; pb_best: BestMatch[] })
-                clearInterval(bmInterval)
-              }
-              if (bm.status === "error") clearInterval(bmInterval)
-            }, 2000)
-          }
-        } catch { /* best-match is optional */ }
       }
       if (data.status === "error") { setErrDetail(data.error_detail || ""); clearInterval(intervalRef.current!) }
     }
@@ -345,7 +325,7 @@ export default function ResultPage() {
             {pa.name} × {pb.name}
           </h1>
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
-            6 scenarios · {nSims} simulations each · 3 judges
+            6 scenarios · {nSims} loops each · 2 judges · pool scan included
           </p>
         </div>
 
@@ -406,43 +386,49 @@ export default function ResultPage() {
             })}
           </div>
           <p className="text-xs mt-3" style={{ color: "rgba(255,255,255,0.55)" }}>
-            Gold bar = raw average (all 3 judges). Purple line = trimmed average (highest & lowest dropped).
+            Gold = Chemistry judge (GPT-5.5). Purple = Values judge (Claude Opus 4.7).
           </p>
         </div>
 
-        {/* Best-match recommendations */}
-        {(bestMatches || true) && (
+        {/* Best-match recommendations — built into the report */}
+        {(report.pa_best_matches?.length > 0 || report.pb_best_matches?.length > 0) && (
           <div className="rounded-2xl p-6 mt-6 mb-2" style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.2)" }}>
             <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "#a855f7" }}>
-              ✦ Best Matches From the Pool
+              ✦ Best Matches From the Candidate Pool
             </p>
-            {!bestMatches ? (
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>Scanning other profiles... (running quick simulations)</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[{ name: pa.name, best: bestMatches.pa_best }, { name: pb.name, best: bestMatches.pb_best }].map(({ name, best }) => (
-                  <div key={name}>
-                    <p className="text-xs font-semibold mb-2" style={{ color: "#d4af37" }}>Best match for {name}:</p>
-                    {best.length === 0 ? (
-                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>No other profiles to compare</p>
-                    ) : best.map((m, i) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {([
+                { name: pa.name, best: report.pa_best_matches },
+                { name: pb.name, best: report.pb_best_matches },
+              ] as { name: string; best: BestMatch[] }[]).map(({ name, best }) => (
+                <div key={name}>
+                  <p className="text-xs font-semibold mb-3" style={{ color: "#d4af37" }}>Best match for {name}:</p>
+                  {best.length === 0
+                    ? <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>No other profiles to compare</p>
+                    : best.map((m, i) => (
                       <div key={i} className="flex items-start gap-3 mb-2 p-3 rounded-xl"
                         style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(168,85,247,0.15)" }}>
-                        <span className="text-xl font-bold font-mono" style={{ color: i === 0 ? "#d4af37" : "#a855f7" }}>
+                        <span className="text-lg font-bold font-mono mt-0.5" style={{ color: i === 0 ? "#d4af37" : "#a855f7" }}>
                           #{i + 1}
                         </span>
-                        <div>
-                          <p className="text-sm font-semibold" style={{ color: "#ffffff" }}>
-                            {m.name} <span className="text-xs font-normal" style={{ color: "#a855f7" }}>({m.score}/100)</span>
-                          </p>
-                          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.65)" }}>{m.bio}</p>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-semibold" style={{ color: "#ffffff" }}>{m.name}</p>
+                            <span className="text-xs font-mono px-2 py-0.5 rounded"
+                              style={{ background: i === 0 ? "rgba(212,175,55,0.2)" : "rgba(168,85,247,0.2)",
+                                       color: i === 0 ? "#d4af37" : "#c084fc" }}>
+                              {m.score}/100
+                            </span>
+                            {m.tag && <span className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{m.tag}</span>}
+                          </div>
+                          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.65)" }}>{m.bio}</p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            )}
+                    ))
+                  }
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
