@@ -49,6 +49,7 @@ async def _find_best_matches(pa: Profile, pb: Profile, candidates: list[Profile]
             return BestMatch(name=candidate.name, score=round(s, 1),
                              bio=candidate.bio[:100], tag=candidate.communication_style)
         except Exception as e:
+            import traceback; traceback.print_exc()
             return None
 
     others = [p for p in candidates if p.name not in (pa.name, pb.name)]

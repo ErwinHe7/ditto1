@@ -34,6 +34,7 @@ def _parse(raw: str, judge_id: str) -> JudgeScore:
     if start == -1 or end == 0:
         raise ValueError(f"No JSON object found in {judge_id} response: {raw[:100]}")
     d = json.loads(raw[start:end])
+    d.pop("judge_id", None)  # LLM sometimes adds this; our caller sets it
     return JudgeScore(judge_id=judge_id, **d)
 
 async def _call_with_retry(msgs, model, judge_id, retries=3) -> str:

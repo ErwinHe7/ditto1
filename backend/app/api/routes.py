@@ -38,21 +38,38 @@ class MatchRequest(BaseModel):
     profile_b: Profile
 
 def _run_match_thread(job_id: str, pa_dict: dict, pb_dict: dict):
+    import sys, os
+    # ensure the backend dir is first in path so app.* imports our code, not anything else
+    backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    if backend_dir not in sys.path:
+        sys.path.insert(0, backend_dir)
+
+    # force reimport to pick up correct module — critical on Windows threading
+    for key in list(sys.modules.keys()):
+        if key.startswith("app."):
+            del sys.modules[key]
+
     from app.pipeline.l3_deep import run_l3_deep_match
+    from app.models import Profile as P
+    from app.scoring import judges as _j
+    import inspect
+    print("JUDGES FILE:", _j.__file__)
+    print("HAS HOLISTIC:", hasattr(_j, 'judge_holistic'))
+    print("JUDGE_FUNCS:", [x for x in dir(_j) if x.startswith('judge_')])
 
     def on_progress(msg):
         _set(job_id, status="running", progress=msg)
 
     _set(job_id, status="running", progress="starting...")
     try:
-        pa, pb = Profile(**pa_dict), Profile(**pb_dict)
+        pa, pb = P(**pa_dict), P(**pb_dict)
         report = asyncio.run(run_l3_deep_match(pa, pb, on_progress=on_progress))
         _set(job_id, status="done", progress="complete",
              report=json.loads(report.model_dump_json()))
     except Exception as e:
         import traceback
         _set(job_id, status="error", progress=str(e),
-             error_detail=traceback.format_exc()[:800])
+             error_detail=traceback.format_exc()[:1500])
 
 @router.post("/match")
 def start_match(req: MatchRequest):
