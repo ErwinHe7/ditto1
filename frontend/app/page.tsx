@@ -78,8 +78,8 @@ function LaunchOverlay() {
   const scenarioState = (index: number) => {
     if (phase === 0) return { label: "Queued", active: false, done: false }
     if (phase === 1) {
-      if (index < activeScenario) return { label: "3 loops drafted", active: false, done: true }
-      if (index === activeScenario) return { label: "Simulating 3 loops", active: true, done: false }
+      if (index < activeScenario) return { label: "7 loops drafted", active: false, done: true }
+      if (index === activeScenario) return { label: "Simulating 7 loops", active: true, done: false }
       return { label: "Queued", active: false, done: false }
     }
     if (phase === 2) return { label: "GPT + Claude scoring", active: true, done: false }
@@ -318,7 +318,7 @@ function ScoutResults({ matches, onUse, onRun }: {
     <div className="rounded-2xl p-5 mb-5" style={{ background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.18)" }}>
       <div className="flex items-center justify-between gap-3 mb-4">
         <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#c084fc" }}>Agentic Scout Top 3</p>
-        <span className="text-xs" style={{ color: "rgba(255,255,255,0.52)" }}>profile-fit scan</span>
+        <span className="text-xs" style={{ color: "rgba(255,255,255,0.52)" }}>L1 scan + 3 quick dates each</span>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {matches.map((m, i) => (
@@ -337,7 +337,7 @@ function ScoutResults({ matches, onUse, onRun }: {
               </div>
               <span className="text-xs font-mono px-2 py-1 rounded"
                 style={{ background: "rgba(212,175,55,0.14)", color: "#d4af37" }}>
-                {m.score}
+                {Math.round(m.score)}/100
               </span>
             </div>
             <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>{m.why}</p>
@@ -476,7 +476,7 @@ export default function Home() {
         {/* Scenario strip */}
         <div className="mb-6 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(212,175,55,0.1)" }}>
           <p className="text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: "rgba(212,175,55,0.6)" }}>
-            4 Simulation Scenarios · Each run 3× · Judged by GPT-5.5 &amp; Claude Opus 4.7
+            4 Simulation Scenarios · Each run 7× · Judged by GPT-5.5 &amp; Claude Opus 4.7
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {SCENARIOS.map((s, i) => (
@@ -510,13 +510,13 @@ export default function Home() {
         <div className="flex flex-col items-center gap-2">
           <button onClick={scoutPool} disabled={loading || scouting} className="text-sm px-5 py-3 rounded-xl"
             style={{ background: "rgba(168,85,247,0.14)", color: "#c084fc", border: "1px solid rgba(168,85,247,0.32)" }}>
-            {scouting ? "Scanning Pool..." : "Find Top 3 From Pool"}
+            {scouting ? "Running L1/L2 Dates..." : "Find Top 3 With Auto-Date"}
           </button>
           <button onClick={submit} disabled={loading || scouting} className="btn-gold">
             {loading ? "Launching Simulation..." : "✦ Run Compatibility Simulation"}
           </button>
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
-            ~1–3 min · Fast best-match recommendations included
+            L1/L2 scout runs 3 quick dates per candidate · Full L3 uses 4 scenarios × 7 loops
           </p>
         </div>
       </div>

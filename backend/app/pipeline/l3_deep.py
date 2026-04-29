@@ -19,6 +19,102 @@ ACTIVE_SCENARIO_IDS = {
 }
 ACTIVE_SCENARIOS = [s for s in SCENARIOS if s["id"] in ACTIVE_SCENARIO_IDS]
 
+SCENARIO_VARIANTS = {
+    "first_coffee": [
+        "A rainy afternoon; one person arrives damp and mildly embarrassed.",
+        "The cafe is crowded and the only open table is near the espresso machine.",
+        "One person is five minutes late but texts an honest apology first.",
+        "The barista mixes up an order, giving them an easy first joke.",
+        "They both notice the playlist at the same time, but have opposite takes.",
+        "One person came straight from class or work and is still switching gears.",
+        "They meet at an outdoor table and a nearby conversation keeps interrupting.",
+    ],
+    "late_night_vulnerable": [
+        "One person is awake after an anxious dream and texts first.",
+        "A song sends one person into an old memory they did not expect.",
+        "One person is stuck finishing work and admits they feel behind in life.",
+        "A photo from years ago makes one person miss who they used to be.",
+        "One person nearly sends a guarded answer, then decides to be honest.",
+        "A family stressor comes up and the conversation gets softer than usual.",
+        "Both are tired enough that jokes fall away and sincerity becomes easier.",
+    ],
+    "minor_conflict": [
+        "They disagree about whether ambition should dominate your twenties.",
+        "They disagree about spending money on experiences versus saving aggressively.",
+        "They disagree about whether routines are grounding or suffocating.",
+        "They disagree about how much partners should merge friend groups.",
+        "They disagree about whether art and work should be practical.",
+        "They disagree about taking risks when the outcome is uncertain.",
+        "They disagree about family obligations and personal independence.",
+    ],
+    "support_under_stress": [
+        "One person had a bad critique or review and feels exposed.",
+        "One person lost a work opportunity and is trying not to spiral.",
+        "One person is exhausted from family pressure and needs gentleness.",
+        "One person is disappointed in themself and expects judgment.",
+        "One person is physically tired and emotionally thin after a long day.",
+        "One person is grieving a small loss they feel silly naming.",
+        "One person asks for company but does not know how to ask for help.",
+    ],
+}
+
+def _scenario_for_loop(scenario: dict, loop_idx: int) -> dict:
+    variants = SCENARIO_VARIANTS.get(scenario["id"], [])
+    if not variants:
+        return scenario
+    variant = variants[loop_idx % len(variants)]
+    return {
+        **scenario,
+        "description": f"{scenario['description']} Variation: {variant}",
+        "opener_prompt": (
+            f"{scenario['opener_prompt']}\n\n"
+            f"Loop variation: {variant}\n"
+            "Do not reuse a generic opening. Start from this concrete situation."
+        ),
+    }
+
+def _seed_for_loop(scenario: dict, loop_idx: int) -> str:
+    seeds = {
+        "first_coffee": [
+            "I think this is us, right?",
+            "Hey, sorry, is this seat taken?",
+            "Okay, first impression: this place is louder than I expected.",
+            "I ordered before I got nervous and changed my mind.",
+            "You found the place okay?",
+            "I was trying to look casual and absolutely failed.",
+            "This playlist is doing a lot right now.",
+        ],
+        "late_night_vulnerable": [
+            "You still awake?",
+            "I know it's late, but my brain will not turn off.",
+            "Can I say something kind of real?",
+            "I found an old photo and now I'm weirdly sad.",
+            "This is maybe too much for 2am, but...",
+            "I almost didn't text this.",
+            "Are you in the mood for a real answer?",
+        ],
+        "minor_conflict": [
+            "Okay, I might disagree with you on this.",
+            "Wait, do you actually believe that?",
+            "That makes sense, but I see it differently.",
+            "I don't want to fake agree here.",
+            "This is one of those things I care about more than I expected.",
+            "Can I push back a little?",
+            "I think this is where we're different.",
+        ],
+        "support_under_stress": [
+            "I had a rough day and I don't want to pretend I didn't.",
+            "Can I be low-energy tonight?",
+            "I think I need a minute before I can be normal.",
+            "Today got to me more than I expected.",
+            "I don't need you to fix it, but I don't want to be alone with it.",
+            "I'm embarrassed by how much this bothered me.",
+            "I could use a softer conversation tonight.",
+        ],
+    }
+    options = seeds.get(scenario["id"], ["Hey."])
+    return options[loop_idx % len(options)]
+
 AFFINITY_DIMENSIONS = {
     "creativity": [
         "art", "artist", "design", "typography", "photography", "ceramics", "music",
@@ -56,16 +152,18 @@ AFFINITY_DIMENSIONS = {
     ],
 }
 
-async def _run_sim(pa: Profile, pb: Profile, scenario: dict, sem: asyncio.Semaphore) -> list[dict]:
+async def _run_sim(pa: Profile, pb: Profile, scenario: dict, sem: asyncio.Semaphore, loop_idx: int = 0) -> list[dict]:
     async with sem:
+        varied_scenario = _scenario_for_loop(scenario, loop_idx)
         state: SimulationState = {
             "profile_a": pa.model_dump(),
             "profile_b": pb.model_dump(),
-            "scenario": scenario,
+            "scenario": varied_scenario,
             "msgs": [],
             "turn": 0,
-            "max_turns": scenario["max_turns"],
+            "max_turns": varied_scenario["max_turns"],
             "finished": False,
+            "seed_user_message": _seed_for_loop(scenario, loop_idx),
         }
         result = await run_simulation(state)
         return result["msgs"]
@@ -93,7 +191,7 @@ async def _run_scenario_batch(
     if on_progress:
         on_progress(f"scenario {scenario_idx+1}/{total_scenarios}: {scenario['name']} ({n} loops)")
 
-    transcripts = await asyncio.gather(*[_run_sim(pa, pb, scenario, sem) for _ in range(n)])
+    transcripts = await asyncio.gather(*[_run_sim(pa, pb, scenario, sem, loop_idx=i) for i in range(n)])
     batches = await asyncio.gather(*[_judge_transcript(t, pa_d, pb_d, sem) for t in transcripts])
     all_scores = [s for b in batches for s in b]
 
@@ -246,6 +344,26 @@ def _affection_score(report: CompatibilityReport) -> int:
         return 50
     return round(sum(scores) / len(scores))
 
+def _to_scout_match(person: Profile, candidate: Profile, score: float) -> ScoutMatch:
+    return ScoutMatch(
+        name=candidate.name,
+        age=candidate.age,
+        score=round(score, 1),
+        bio=candidate.bio[:140],
+        tag=candidate.communication_style,
+        gender=candidate.gender,
+        why=_match_reason(person, candidate),
+        boosters=_affection_boosters(person, candidate),
+        profile=candidate,
+    )
+
+def scout_profile_matches_from_scores(
+    person: Profile,
+    scored_candidates: list[tuple[Profile, float]],
+    top_n: int = 3,
+) -> list[ScoutMatch]:
+    return [_to_scout_match(person, candidate, score) for candidate, score in scored_candidates[:top_n]]
+
 def scout_profile_matches(person: Profile, candidates: list[Profile], top_n: int = 3) -> list[ScoutMatch]:
     others = [p for p in candidates if p.name.lower() != person.name.lower()]
     eligible = _opposite_gender_candidates(person, others)
@@ -258,17 +376,7 @@ def scout_profile_matches(person: Profile, candidates: list[Profile], top_n: int
     ranked = []
     for candidate, raw in raw_scores:
         score = _calibrated_score(raw, minimum, maximum)
-        ranked.append(ScoutMatch(
-            name=candidate.name,
-            age=candidate.age,
-            score=round(score, 1),
-            bio=candidate.bio[:140],
-            tag=candidate.communication_style,
-            gender=candidate.gender,
-            why=_match_reason(person, candidate),
-            boosters=_affection_boosters(person, candidate),
-            profile=candidate,
-        ))
+        ranked.append(_to_scout_match(person, candidate, score))
     return sorted(ranked, key=lambda x: x.score, reverse=True)[:top_n]
 
 async def _find_best_matches(pa: Profile, pb: Profile, candidates: list[Profile]) -> dict:
@@ -300,8 +408,8 @@ async def _find_best_matches(pa: Profile, pb: Profile, candidates: list[Profile]
     pb_scores = score_candidates(pb)
 
     return {
-        "pa_best": sorted(pa_scores, key=lambda x: x.score, reverse=True)[:2],
-        "pb_best": sorted(pb_scores, key=lambda x: x.score, reverse=True)[:2],
+        "pa_best": sorted(pa_scores, key=lambda x: x.score, reverse=True)[:3],
+        "pb_best": sorted(pb_scores, key=lambda x: x.score, reverse=True)[:3],
     }
 
 def _load_all_profiles() -> list[Profile]:
@@ -345,9 +453,9 @@ async def find_top_matches_via_simulation(
     """
     Tiered auto-matching: L1 coarse -> L2 light sim -> L3 deep sim.
 
-      L1 (ms):  embedding-style cosine over the full candidate pool   -> top max(6, top_n*2)
-      L2 (s):   1 scenario x 3 turns x 1 judge per pair                -> top top_n
-      L3 (min): full ACTIVE_SCENARIOS x N_LOOPS x judges per pair      -> ranked
+      L1 (ms):  embedding-style cosine over the full candidate pool   -> top 100
+      L2 (s):   1 scenario x 3 short dates per pair                   -> top 10
+      L3 (min): full ACTIVE_SCENARIOS x N_LOOPS x judges per pair      -> ranked top_n
 
     Returns top_n CompatibilityReports, sorted by overall_score desc.
     Each report carries the same fields as run_l3_deep_match output (transcripts,
@@ -360,11 +468,11 @@ async def find_top_matches_via_simulation(
 
     if on_progress:
         on_progress(f"L1 coarse scan over {len(pool)} candidates...")
-    l1_pool = await l1_coarse_filter(target, pool, top_k=max(6, top_n * 2))
+    l1_pool = await l1_coarse_filter(target, pool, top_k=100)
 
     if on_progress:
         on_progress(f"L2 light simulation across {len(l1_pool)} candidates...")
-    l2_pool = await l2_medium_filter(target, l1_pool, top_k=top_n)
+    l2_pool = await l2_medium_filter(target, l1_pool, top_k=10)
 
     reports: list[CompatibilityReport] = []
     for i, candidate in enumerate(l2_pool):

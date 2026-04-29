@@ -23,7 +23,7 @@ def _build_chat_msgs(state, speaker):
 
     # seed first turn if no user message yet
     if not any(m["role"] == "user" for m in msgs[1:]):
-        msgs.append({"role": "user", "content": "Hey."})
+        msgs.append({"role": "user", "content": state.get("seed_user_message", "Hey.")})
 
     return msgs
 

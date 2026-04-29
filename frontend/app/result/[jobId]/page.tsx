@@ -114,6 +114,10 @@ function CandidateLeadCard({ match, index }: { match: BestMatch; index: number }
             style={{ background: "rgba(168,85,247,0.16)", color: "#c084fc" }}>
             profile-fit lead
           </span>
+          <span className="text-xs font-mono px-2 py-0.5 rounded"
+            style={{ background: "rgba(212,175,55,0.14)", color: "#d4af37" }}>
+            {Math.round(match.score)}/100
+          </span>
           {match.gender && (
             <span className="text-xs px-2 py-0.5 rounded"
               style={{
@@ -196,8 +200,8 @@ function ScenarioCard({ sr, paName, pbName }: { sr: ScenarioResult; paName: stri
           <div>
             <p className="text-sm font-semibold" style={{ color: "#f5f0ff" }}>{sr.scenario_name}</p>
             <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
-              avg: <span style={{ color: "#d4af37" }}>{Math.round(sr.avg_score)}</span>
-              {" "}&nbsp;·&nbsp; trimmed: <span style={{ color: "#a855f7" }}>{Math.round(sr.trimmed_avg_score)}</span>
+              avg: <span style={{ color: "#d4af37" }}>{Math.round(sr.avg_score)}/100</span>
+              {" "}&nbsp;·&nbsp; trimmed: <span style={{ color: "#a855f7" }}>{Math.round(sr.trimmed_avg_score)}/100</span>
             </p>
           </div>
         </div>
@@ -468,7 +472,7 @@ export default function ResultPage() {
         {/* Scenario breakdown bar chart */}
         <div className="rounded-2xl p-6 mb-6" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(212,175,55,0.1)" }}>
           <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "rgba(212,175,55,0.6)" }}>
-            Scenario Scores — Raw vs Trimmed
+            Scenario Scores
           </p>
           <div className="space-y-3">
             {report.scenario_results.map(sr => {
@@ -477,7 +481,7 @@ export default function ResultPage() {
                 <div key={sr.scenario_id}>
                   <div className="flex justify-between text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>
                     <span>{icon} {sr.scenario_name}</span>
-                    <span style={{ color: "#d4af37" }}>{Math.round(sr.avg_score)} / <span style={{ color: "#a855f7" }}>{Math.round(sr.trimmed_avg_score)}</span></span>
+                    <span style={{ color: "#d4af37" }}>{Math.round(sr.avg_score)}/100</span>
                   </div>
                   <div className="relative h-2 rounded-full" style={{ background: "rgba(255,255,255,0.05)" }}>
                     <div className="absolute inset-y-0 left-0 rounded-full opacity-40"

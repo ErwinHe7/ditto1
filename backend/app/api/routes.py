@@ -4,7 +4,13 @@ import os
 from fastapi import APIRouter
 from pydantic import BaseModel
 from app.models import Profile
-from app.pipeline.l3_deep import run_l3_deep_match, scout_profile_matches, find_top_matches_via_simulation
+from app.pipeline.l1_coarse import l1_coarse_filter
+from app.pipeline.l2_medium import l2_medium_rank
+from app.pipeline.l3_deep import (
+    run_l3_deep_match,
+    scout_profile_matches_from_scores,
+    find_top_matches_via_simulation,
+)
 from app import db as DB
 
 router = APIRouter()
@@ -92,12 +98,21 @@ def list_jobs():
     return rows
 
 @router.post("/scout")
-def scout_matches(req: ScoutRequest):
+async def scout_matches(req: ScoutRequest):
     with open(os.path.abspath(PROFILES_PATH)) as f:
         candidates = [Profile(**p) for p in json.load(f)]
     top_n = max(1, min(req.top_n, 5))
-    matches = scout_profile_matches(req.profile, candidates, top_n=top_n)
-    return {"matches": [json.loads(m.model_dump_json()) for m in matches]}
+    l1_pool = await l1_coarse_filter(req.profile, candidates, top_k=max(6, top_n * 2))
+    l2_ranked = await l2_medium_rank(req.profile, l1_pool, top_k=top_n)
+    matches = scout_profile_matches_from_scores(req.profile, l2_ranked, top_n=top_n)
+    return {
+        "pipeline": {
+            "l1_candidates": len(l1_pool),
+            "l2_quick_dates_per_candidate": 3,
+            "l3_full_loops_per_scenario": 7,
+        },
+        "matches": [json.loads(m.model_dump_json()) for m in matches],
+    }
 
 @router.post("/match/top")
 async def find_top_matches(req: ScoutRequest):

@@ -152,5 +152,159 @@
     "values": ["authenticity", "expression", "tenderness", "freedom"],
     "deal_breakers": ["emotionally guarded", "judgmental"],
     "looking_for": "Someone who feels deeply and isn't afraid to be a person about it"
+  },
+  {
+    "name": "Ben",
+    "age": 24,
+    "gender": "male",
+    "bio": "Urban planner who notices sidewalks, public benches, and how cities make people kinder or lonelier. I host elaborate dinner parties in a tiny apartment and believe good logistics are romantic.",
+    "interests": ["urban design", "jazz bars", "home cooking", "cycling", "architecture", "public transit", "wine shops"],
+    "communication_style": "grounded, witty, asks practical but thoughtful questions",
+    "values": ["community", "beauty", "stability", "care"],
+    "deal_breakers": ["careless with people", "hates cities"],
+    "looking_for": "Someone curious about how ordinary life could be designed better"
+  },
+  {
+    "name": "Lena",
+    "age": 25,
+    "gender": "female",
+    "bio": "Product designer at a health tech startup. I make clean interfaces and chaotic playlists. I love a precise plan, then one beautifully unnecessary detour.",
+    "interests": ["product design", "pilates", "electronic music", "museum nights", "thai food", "notion templates"],
+    "communication_style": "bright, precise, emotionally direct, a little teasing",
+    "values": ["clarity", "health", "taste", "growth"],
+    "deal_breakers": ["mixed signals", "weaponized incompetence"],
+    "looking_for": "A partner who can be intentional without making life feel like a spreadsheet"
+  },
+  {
+    "name": "Omar",
+    "age": 27,
+    "gender": "male",
+    "bio": "Emergency medicine resident. My schedule is brutal but my attention is real when I'm there. I decompress with boxing, old movies, and making breakfast at weird hours.",
+    "interests": ["medicine", "boxing", "old films", "breakfast food", "podcasts", "volunteering", "soccer"],
+    "communication_style": "calm under pressure, protective, direct, quietly funny",
+    "values": ["service", "loyalty", "resilience", "family"],
+    "deal_breakers": ["cruel humor", "constant chaos"],
+    "looking_for": "Someone warm enough to feel like rest and strong enough to have their own life"
+  },
+  {
+    "name": "Camille",
+    "age": 24,
+    "gender": "female",
+    "bio": "Museum educator and amateur baker. I can explain a painting to a room of third graders and still overthink a text back. I like tenderness with a little intellectual bite.",
+    "interests": ["museums", "baking", "french films", "children's education", "ceramics", "farmers markets"],
+    "communication_style": "gentle, articulate, observant, warms up slowly",
+    "values": ["kindness", "learning", "beauty", "patience"],
+    "deal_breakers": ["condescension", "rushing intimacy"],
+    "looking_for": "Someone who pays attention and means what they say"
+  },
+  {
+    "name": "Felix",
+    "age": 23,
+    "gender": "male",
+    "bio": "Experimental chef in a tiny restaurant where the menu changes whenever we get bored. I flirt through food and mild chaos. I am more sentimental than my haircut suggests.",
+    "interests": ["cooking", "natural wine", "punk music", "foraging", "night markets", "tattoos", "skateboarding"],
+    "communication_style": "playful, impulsive, sensory, surprisingly tender",
+    "values": ["creativity", "pleasure", "honesty", "freedom"],
+    "deal_breakers": ["snobbery", "never tries new things"],
+    "looking_for": "Someone who says yes to weird plans and tells the truth"
+  },
+  {
+    "name": "Nia",
+    "age": 26,
+    "gender": "female",
+    "bio": "Civil rights lawyer, marathon hobbyist, group chat therapist. I argue for a living but I do not want home to feel like court. I believe softness is a discipline.",
+    "interests": ["law", "running", "gospel music", "politics", "memoirs", "sunday dinners", "yoga"],
+    "communication_style": "clear, principled, emotionally mature, warm when safe",
+    "values": ["justice", "family", "discipline", "truth"],
+    "deal_breakers": ["apathy", "performative allyship"],
+    "looking_for": "Someone principled who can also be silly in the kitchen"
+  },
+  {
+    "name": "Noah",
+    "age": 22,
+    "gender": "male",
+    "bio": "Wildlife photographer who accidentally became good at being alone. I chase light, wait quietly, and remember tiny details. I am trying to build something less temporary than a trip.",
+    "interests": ["photography", "birding", "hiking", "film cameras", "camping", "folk music", "coffee"],
+    "communication_style": "quiet, attentive, poetic, sends long thoughtful texts",
+    "values": ["presence", "wonder", "independence", "gentleness"],
+    "deal_breakers": ["loud cruelty", "needs constant stimulation"],
+    "looking_for": "Someone who understands silence can be intimate"
+  },
+  {
+    "name": "Harper",
+    "age": 23,
+    "gender": "female",
+    "bio": "Data journalist obsessed with maps, scams, and why people believe things. I fact-check myself mid-sentence. My ideal Saturday has a long walk and a conspiracy board made of receipts.",
+    "interests": ["data journalism", "maps", "documentaries", "long walks", "crosswords", "dumplings", "public records"],
+    "communication_style": "curious, analytical, dry humor, asks sharp follow-ups",
+    "values": ["truth", "curiosity", "accountability", "independence"],
+    "deal_breakers": ["willful ignorance", "dodges hard questions"],
+    "looking_for": "Someone honest enough to be interesting"
+  },
+  {
+    "name": "Adrian",
+    "age": 28,
+    "gender": "male",
+    "bio": "Architect, former classical pianist, recovering perfectionist. I like clean lines, messy conversations, and people who have a private sense of wonder.",
+    "interests": ["architecture", "classical piano", "design books", "espresso", "gallery openings", "swimming"],
+    "communication_style": "measured, elegant, observant, dryly affectionate",
+    "values": ["craft", "discipline", "beauty", "integrity"],
+    "deal_breakers": ["careless aesthetics", "emotional laziness"],
+    "looking_for": "Someone with taste, depth, and a little mischief"
+  },
+  {
+    "name": "Elena",
+    "age": 24,
+    "gender": "female",
+    "bio": "Robotics engineer who builds delicate machines and kills every houseplant. I like people who can explain their obsession without apologizing for it.",
+    "interests": ["robotics", "salsa dancing", "sci-fi", "maker spaces", "bouldering", "tacos", "astronomy"],
+    "communication_style": "nerdy, upbeat, direct, laughs easily",
+    "values": ["curiosity", "competence", "play", "honesty"],
+    "deal_breakers": ["anti-science", "fragile ego"],
+    "looking_for": "Someone who is serious about something and playful about everything else"
+  },
+  {
+    "name": "Miles",
+    "age": 25,
+    "gender": "male",
+    "bio": "Middle school music teacher. My students roast me daily and keep me humble. I write arrangements after midnight and believe consistency is underrated romance.",
+    "interests": ["music education", "jazz piano", "basketball", "community theater", "soul food", "vinyl"],
+    "communication_style": "warm, steady, funny, emotionally available",
+    "values": ["commitment", "joy", "education", "family"],
+    "deal_breakers": ["flaky plans", "mean to service workers"],
+    "looking_for": "Someone kind who still wants to make life feel like a song"
+  },
+  {
+    "name": "Tessa",
+    "age": 27,
+    "gender": "female",
+    "bio": "Founder of a small ceramics studio. My hands are always dusty and my calendar is always too full. I am ambitious about making beautiful things slowly.",
+    "interests": ["ceramics", "small business", "gardening", "natural wine", "indie folk", "interior design"],
+    "communication_style": "earthy, focused, affectionate, blunt when tired",
+    "values": ["craft", "stability", "creativity", "devotion"],
+    "deal_breakers": ["careless with money", "dismissive of handmade work"],
+    "looking_for": "Someone who respects ambition that does not look corporate"
+  },
+  {
+    "name": "Julian",
+    "age": 23,
+    "gender": "male",
+    "bio": "Philosophy grad student and part-time chess coach. I am trying to become less impossible at parties. I love difficult questions and easy affection.",
+    "interests": ["philosophy", "chess", "tea houses", "russian novels", "walking", "indie games"],
+    "communication_style": "intense, curious, gentle once comfortable, overexplains lovingly",
+    "values": ["truth", "depth", "humility", "growth"],
+    "deal_breakers": ["intellectual dishonesty", "mocking sincerity"],
+    "looking_for": "Someone who can disagree deeply and still be tender"
+  },
+  {
+    "name": "Imani",
+    "age": 25,
+    "gender": "female",
+    "bio": "Brand strategist who can make anything sound better and is suspicious of that power. I love language, dinner parties, and friends who tell the truth with style.",
+    "interests": ["branding", "poetry", "dinner parties", "fashion", "pilates", "neo-soul", "travel"],
+    "communication_style": "charismatic, polished, emotionally perceptive, playful",
+    "values": ["authenticity", "beauty", "loyalty", "ambition"],
+    "deal_breakers": ["bad faith", "no inner life"],
+    "looking_for": "Someone with substance behind the charm"
   }
 ]
