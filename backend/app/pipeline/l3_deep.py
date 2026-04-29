@@ -3,7 +3,7 @@ import json
 import os
 import math
 import re
-from app.models import Profile, ScenarioResult, CompatibilityReport, BestMatch
+from app.models import Profile, ScenarioResult, CompatibilityReport, BestMatch, ScoutMatch
 from app.graph.builder import run_simulation
 from app.graph.state import SimulationState
 from app.scenarios.definitions import SCENARIOS
@@ -183,6 +183,20 @@ def _calibrated_score(raw: float, minimum: float, maximum: float) -> float:
     score = 50.0 + raw * 0.22 + relative * 22.0
     return max(45.0, min(92.0, score))
 
+def _top_dimension(profile: Profile) -> str:
+    vector = _dimension_vector(profile)
+    if not vector:
+        return "their world"
+    return max(vector.items(), key=lambda item: item[1])[0].replace("_", " ")
+
+def _shared_labels(a: list[str], b: list[str]) -> list[str]:
+    b_tokens = _norm_items(b)
+    shared = []
+    for item in a:
+        if _tokens(item) & b_tokens:
+            shared.append(item)
+    return shared
+
 def _opposite_gender_candidates(person: Profile, candidates: list[Profile]) -> list[Profile]:
     gender = person.gender.lower()
     if gender == "female":
@@ -190,6 +204,72 @@ def _opposite_gender_candidates(person: Profile, candidates: list[Profile]) -> l
     if gender == "male":
         return [candidate for candidate in candidates if candidate.gender.lower() == "female"]
     return candidates
+
+def _match_reason(person: Profile, candidate: Profile) -> str:
+    shared_values = _shared_labels(person.values, candidate.values)
+    shared_interests = _shared_labels(person.interests, candidate.interests)
+    if shared_values:
+        return f"Shared value signal around {', '.join(shared_values[:2])}, with enough contrast to test in simulation."
+    if shared_interests:
+        return f"Shared interest signal around {', '.join(shared_interests[:2])}, plus compatible conversation texture."
+    return f"Strong {_top_dimension(person)} to {_top_dimension(candidate)} profile resonance from the pool scan."
+
+def _affection_boosters(person: Profile, candidate: Profile) -> list[str]:
+    tips = []
+    if candidate.interests:
+        tips.append(f"Ask one specific follow-up about {candidate.interests[0]} instead of giving a generic compliment.")
+    if candidate.values:
+        tips.append(f"Show {candidate.values[0]} through a concrete choice or story, not a claim.")
+    if candidate.communication_style:
+        tips.append(f"Meet their communication rhythm: {candidate.communication_style}.")
+    if candidate.deal_breakers:
+        tips.append(f"Avoid their likely turnoff: {candidate.deal_breakers[0]}.")
+    return tips[:3]
+
+def _pair_affection_tips(pa: Profile, pb: Profile) -> list[str]:
+    return [
+        f"For {pb.name}: {_affection_boosters(pa, pb)[0] if _affection_boosters(pa, pb) else 'Ask a concrete follow-up and make room for their pace.'}",
+        f"For {pa.name}: {_affection_boosters(pb, pa)[0] if _affection_boosters(pb, pa) else 'Reflect back one detail they care about before changing topics.'}",
+        "Across the next chat: reward vulnerability with curiosity before advice.",
+    ]
+
+def _affection_score(report: CompatibilityReport) -> int:
+    scores = []
+    for sr in report.scenario_results:
+        for judge in sr.judge_scores:
+            scores.append(
+                0.45 * judge.chemistry
+                + 0.35 * judge.curiosity
+                + 0.20 * judge.energy_match
+            )
+    if not scores:
+        return 50
+    return round(sum(scores) / len(scores))
+
+def scout_profile_matches(person: Profile, candidates: list[Profile], top_n: int = 3) -> list[ScoutMatch]:
+    others = [p for p in candidates if p.name.lower() != person.name.lower()]
+    eligible = _opposite_gender_candidates(person, others)
+    if not eligible:
+        eligible = others
+    raw_scores = [(candidate, _profile_affinity(person, candidate)) for candidate in eligible]
+    raw_values = [score for _, score in raw_scores]
+    minimum = min(raw_values, default=0.0)
+    maximum = max(raw_values, default=1.0)
+    ranked = []
+    for candidate, raw in raw_scores:
+        score = _calibrated_score(raw, minimum, maximum)
+        ranked.append(ScoutMatch(
+            name=candidate.name,
+            age=candidate.age,
+            score=round(score, 1),
+            bio=candidate.bio[:140],
+            tag=candidate.communication_style,
+            gender=candidate.gender,
+            why=_match_reason(person, candidate),
+            boosters=_affection_boosters(person, candidate),
+            profile=candidate,
+        ))
+    return sorted(ranked, key=lambda x: x.score, reverse=True)[:top_n]
 
 async def _find_best_matches(pa: Profile, pb: Profile, candidates: list[Profile]) -> dict:
     def score_candidates(person: Profile):
@@ -249,6 +329,8 @@ async def run_l3_deep_match(pa: Profile, pb: Profile, n_sims=None, on_progress=N
     best = await _find_best_matches(pa, pb, all_profiles)
 
     return report.model_copy(update={
+        "affection_score": _affection_score(report),
+        "affection_tips": _pair_affection_tips(pa, pb),
         "pa_best_matches": best["pa_best"],
         "pb_best_matches": best["pb_best"],
     })

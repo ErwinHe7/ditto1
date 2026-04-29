@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { type Profile, startMatch, getSampleProfiles } from "@/lib/api"
+import { type Profile, type ScoutMatch, startMatch, getSampleProfiles, scoutMatches } from "@/lib/api"
 
 const SCENARIOS = [
   { name: "☕ First Coffee Date", desc: "First IRL meeting. Awkward, curious, real." },
@@ -308,14 +308,73 @@ function ProfileForm({ label, value, onChange, accent, onPickTemplate, samples }
   )
 }
 
+function ScoutResults({ matches, onUse, onRun }: {
+  matches: ScoutMatch[]
+  onUse: (profile: Profile) => void
+  onRun: (profile: Profile) => void
+}) {
+  if (!matches.length) return null
+  return (
+    <div className="rounded-2xl p-5 mb-5" style={{ background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.18)" }}>
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#c084fc" }}>Agentic Scout Top 3</p>
+        <span className="text-xs" style={{ color: "rgba(255,255,255,0.52)" }}>profile-fit scan</span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {matches.map((m, i) => (
+          <div key={`${m.name}-${i}`} className="rounded-xl p-4 flex flex-col gap-3"
+            style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold font-mono" style={{ color: i === 0 ? "#d4af37" : "#a855f7" }}>#{i + 1}</span>
+                  <p className="text-sm font-semibold" style={{ color: "#fff" }}>{m.name}</p>
+                  <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: `${genderColor(m.gender || "")}20`, color: genderColor(m.gender || "") }}>
+                    {genderLabel(m.gender || "")}
+                  </span>
+                </div>
+                <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.58)" }}>{m.age} · {m.tag}</p>
+              </div>
+              <span className="text-xs font-mono px-2 py-1 rounded"
+                style={{ background: "rgba(212,175,55,0.14)", color: "#d4af37" }}>
+                {m.score}
+              </span>
+            </div>
+            <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>{m.why}</p>
+            <div className="space-y-1.5">
+              {m.boosters.slice(0, 2).map((tip, idx) => (
+                <p key={idx} className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
+                  + {tip}
+                </p>
+              ))}
+            </div>
+            <div className="flex gap-2 mt-auto">
+              <button onClick={() => onUse(m.profile)} className="flex-1 text-xs py-2 rounded-lg"
+                style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.78)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                Use
+              </button>
+              <button onClick={() => onRun(m.profile)} className="flex-1 text-xs py-2 rounded-lg"
+                style={{ background: "rgba(212,175,55,0.16)", color: "#d4af37", border: "1px solid rgba(212,175,55,0.32)" }}>
+                Simulate
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
   const router = useRouter()
   const [pa, setPa] = useState<Profile>(EMPTY)
   const [pb, setPb] = useState<Profile>({ ...EMPTY, gender: "male" })
   const [loading, setLoading] = useState(false)
+  const [scouting, setScouting] = useState(false)
   const [err, setErr] = useState("")
   const [samples, setSamples] = useState<Profile[]>([])
   const [picker, setPicker] = useState<"a" | "b" | null>(null)
+  const [scoutResults, setScoutResults] = useState<ScoutMatch[]>([])
 
   useEffect(() => {
     getSampleProfiles().then(s => {
@@ -327,26 +386,27 @@ export default function Home() {
     })
   }, [])
 
-  const submit = async () => {
-    if (!pa.name || !pb.name || !pa.bio || !pb.bio) {
+  const runMatchWith = async (partner: Profile) => {
+    if (!pa.name || !partner.name || !pa.bio || !partner.bio) {
       setErr("Fill in at least Name and Bio for both people.")
       return
     }
-    if (!isFemaleMalePair(pa, pb)) {
+    if (!isFemaleMalePair(pa, partner)) {
       setErr("For this demo, choose one Female and one Male profile. Custom profiles still work: set the gender fields before running.")
       return
     }
     setErr("")
     setLoading(true)
+    setPb(partner)
     try {
-      const data = await startMatch(pa, pb)
+      const data = await startMatch(pa, partner)
       if (data.status === "error") {
         throw new Error(data.error_detail || data.progress || "Simulation failed")
       }
       // store all profiles in sessionStorage for result page
       sessionStorage.setItem("all_profiles", JSON.stringify(samples))
       sessionStorage.setItem("pa", JSON.stringify(pa))
-      sessionStorage.setItem("pb", JSON.stringify(pb))
+      sessionStorage.setItem("pb", JSON.stringify(partner))
       if (data.report) {
         sessionStorage.setItem(`report:${data.job_id}`, JSON.stringify(data.report))
       }
@@ -354,6 +414,30 @@ export default function Home() {
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : String(e))
       setLoading(false)
+    }
+  }
+
+  const submit = async () => runMatchWith(pb)
+
+  const scoutPool = async () => {
+    if (!pa.name || !pa.bio) {
+      setErr("Fill Person A's Name and Bio before scouting.")
+      return
+    }
+    if (!["female", "male"].includes(pa.gender.toLowerCase())) {
+      setErr("Set Person A to Female or Male for this candidate-pool scout.")
+      return
+    }
+    setErr("")
+    setScouting(true)
+    try {
+      const matches = await scoutMatches(pa, 3)
+      setScoutResults(matches)
+      if (matches[0]?.profile) setPb(matches[0].profile)
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setScouting(false)
     }
   }
 
@@ -415,10 +499,20 @@ export default function Home() {
             onPickTemplate={() => setPicker("b")} samples={samples} />
         </div>
 
+        <ScoutResults
+          matches={scoutResults}
+          onUse={profile => setPb(profile)}
+          onRun={profile => runMatchWith(profile)}
+        />
+
         {err && <p className="text-center text-sm mb-3" style={{ color: "#f87171" }}>{err}</p>}
 
         <div className="flex flex-col items-center gap-2">
-          <button onClick={submit} disabled={loading} className="btn-gold">
+          <button onClick={scoutPool} disabled={loading || scouting} className="text-sm px-5 py-3 rounded-xl"
+            style={{ background: "rgba(168,85,247,0.14)", color: "#c084fc", border: "1px solid rgba(168,85,247,0.32)" }}>
+            {scouting ? "Scanning Pool..." : "Find Top 3 From Pool"}
+          </button>
+          <button onClick={submit} disabled={loading || scouting} className="btn-gold">
             {loading ? "Launching Simulation..." : "✦ Run Compatibility Simulation"}
           </button>
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>

@@ -37,6 +37,12 @@ class BestMatch(BaseModel):
     tag: str = ""
     gender: str = ""
 
+class ScoutMatch(BestMatch):
+    age: int
+    why: str = ""
+    boosters: list[str] = []
+    profile: Profile
+
 class CompatibilityReport(BaseModel):
     profile_a: Profile
     profile_b: Profile
@@ -46,5 +52,7 @@ class CompatibilityReport(BaseModel):
     confidence: float
     recommendation: Literal["strong_match", "promising", "uncertain", "skip"]
     summary: str
+    affection_score: int = 0
+    affection_tips: list[str] = []
     pa_best_matches: list[BestMatch] = []
     pb_best_matches: list[BestMatch] = []

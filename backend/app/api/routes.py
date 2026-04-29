@@ -4,7 +4,7 @@ import os
 from fastapi import APIRouter
 from pydantic import BaseModel
 from app.models import Profile
-from app.pipeline.l3_deep import run_l3_deep_match
+from app.pipeline.l3_deep import run_l3_deep_match, scout_profile_matches
 from app import db as DB
 
 router = APIRouter()
@@ -36,6 +36,10 @@ def _get(job_id) -> dict:
 class MatchRequest(BaseModel):
     profile_a: Profile
     profile_b: Profile
+
+class ScoutRequest(BaseModel):
+    profile: Profile
+    top_n: int = 3
 
 @router.post("/match")
 async def start_match(req: MatchRequest):
@@ -86,6 +90,14 @@ def list_jobs():
     if not rows:
         return [{"job_id": k, "status": v.get("status"), "progress": v.get("progress")} for k, v in _mem.items()]
     return rows
+
+@router.post("/scout")
+def scout_matches(req: ScoutRequest):
+    with open(os.path.abspath(PROFILES_PATH)) as f:
+        candidates = [Profile(**p) for p in json.load(f)]
+    top_n = max(1, min(req.top_n, 5))
+    matches = scout_profile_matches(req.profile, candidates, top_n=top_n)
+    return {"matches": [json.loads(m.model_dump_json()) for m in matches]}
 
 @router.get("/sample-profiles")
 def get_sample_profiles():

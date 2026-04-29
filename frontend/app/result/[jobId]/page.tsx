@@ -134,6 +134,34 @@ function CandidateLeadCard({ match, index }: { match: BestMatch; index: number }
   )
 }
 
+function AffectionPanel({ score, tips }: { score?: number; tips?: string[] }) {
+  if (!score && !tips?.length) return null
+  return (
+    <div className="rounded-2xl p-6 mb-6" style={{ background: "rgba(212,175,55,0.045)", border: "1px solid rgba(212,175,55,0.14)" }}>
+      <div className="flex flex-col md:flex-row gap-5 md:items-start">
+        <div className="shrink-0">
+          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "rgba(212,175,55,0.7)" }}>
+            Interest Signal
+          </p>
+          <div className="text-4xl font-bold font-mono" style={{ color: "#d4af37" }}>
+            {score || 50}<span className="text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>/100</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1">
+          {(tips || []).slice(0, 3).map((tip, i) => (
+            <div key={i} className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <p className="text-[11px] uppercase tracking-wider mb-1" style={{ color: "rgba(168,85,247,0.74)" }}>
+                lift {i + 1}
+              </p>
+              <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.74)" }}>{tip}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ScenarioCard({ sr, paName, pbName }: { sr: ScenarioResult; paName: string; pbName: string }) {
   const [open, setOpen] = useState(false)
   const [simIdx, setSimIdx] = useState(0)
@@ -360,9 +388,13 @@ export default function ResultPage() {
   const exportFullReport = () => {
     const lines = [`DITTO COMPATIBILITY REPORT\n${pa.name} × ${pb.name}\n${"=".repeat(50)}\n\n`]
     lines.push(`Overall Score: ${report.overall_score}/100 (trimmed: ${report.trimmed_overall_score}/100)\n`)
+    if (report.affection_score) lines.push(`Interest Signal: ${report.affection_score}/100\n`)
     lines.push(`Confidence: ${Math.round(report.confidence * 100)}%\n`)
     lines.push(`Recommendation: ${rec.label}\n\n`)
     lines.push(`Summary:\n${report.summary}\n\n`)
+    if (report.affection_tips?.length) {
+      lines.push(`Interest Lifts:\n${report.affection_tips.map(t => `- ${t}`).join("\n")}\n\n`)
+    }
     lines.push(`${"=".repeat(50)}\nSCENARIO RESULTS\n${"=".repeat(50)}\n\n`)
     report.scenario_results.forEach(sr => {
       lines.push(`${sr.scenario_name}\nAvg: ${sr.avg_score} | Trimmed: ${sr.trimmed_avg_score}\n\n`)
@@ -430,6 +462,8 @@ export default function ResultPage() {
             </div>
           </div>
         </div>
+
+        <AffectionPanel score={report.affection_score} tips={report.affection_tips} />
 
         {/* Scenario breakdown bar chart */}
         <div className="rounded-2xl p-6 mb-6" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(212,175,55,0.1)" }}>

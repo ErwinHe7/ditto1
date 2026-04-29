@@ -41,6 +41,8 @@ export interface CompatibilityReport {
   confidence: number
   recommendation: "strong_match" | "promising" | "uncertain" | "skip"
   summary: string
+  affection_score?: number
+  affection_tips?: string[]
   pa_best_matches: BestMatch[]
   pb_best_matches: BestMatch[]
 }
@@ -65,6 +67,13 @@ export interface BestMatch {
   gender?: string
 }
 
+export interface ScoutMatch extends BestMatch {
+  age: number
+  why: string
+  boosters: string[]
+  profile: Profile
+}
+
 export async function startMatch(pa: Profile, pb: Profile): Promise<MatchStartResponse> {
   const r = await fetch(`${BASE}/match`, {
     method: "POST",
@@ -87,6 +96,17 @@ export async function getSampleProfiles(): Promise<Profile[]> {
     if (!r.ok) return []
     return r.json()
   } catch { return [] }
+}
+
+export async function scoutMatches(profile: Profile, topN = 3): Promise<ScoutMatch[]> {
+  const r = await fetch(`${BASE}/scout`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ profile, top_n: topN }),
+  })
+  if (!r.ok) throw new Error(await r.text())
+  const data = await r.json()
+  return data.matches || []
 }
 
 export async function startBestMatches(pa: Profile, pb: Profile, allProfiles: Profile[]): Promise<{ job_id: string }> {
