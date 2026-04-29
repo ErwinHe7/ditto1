@@ -16,6 +16,8 @@ const JUDGE_LABELS: Record<string, string> = {
   values: "Claude Opus 4.7 — Values",
 }
 
+const JUDGES_PER_SIM = 2
+
 const SCENARIO_ICONS: Record<string, string> = {
   first_coffee: "☕",
   late_night_vulnerable: "🌙",
@@ -81,7 +83,7 @@ function ScenarioCard({ sr, paName, pbName }: { sr: ScenarioResult; paName: stri
   const [open, setOpen] = useState(false)
   const [simIdx, setSimIdx] = useState(0)
   const transcript = sr.transcripts[simIdx] || []
-  const judgesForSim = sr.judge_scores.slice(simIdx * 3, simIdx * 3 + 3)
+  const judgesForSim = sr.judge_scores.slice(simIdx * JUDGES_PER_SIM, simIdx * JUDGES_PER_SIM + JUDGES_PER_SIM)
   const icon = SCENARIO_ICONS[sr.scenario_id] || "🎭"
 
   const exportLog = () => {
@@ -118,7 +120,7 @@ function ScenarioCard({ sr, paName, pbName }: { sr: ScenarioResult; paName: stri
         </div>
         <div className="flex items-center gap-3">
           <div className="hidden md:flex gap-2">
-            {sr.judge_scores.slice(0, 3).map((js, i) => (
+            {sr.judge_scores.slice(0, JUDGES_PER_SIM).map((js, i) => (
               <span key={i} className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: "rgba(168,85,247,0.15)", color: "#c084fc" }}>
                 {js.overall}
               </span>

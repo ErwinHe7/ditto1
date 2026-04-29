@@ -224,7 +224,7 @@ export default function Home() {
             Ditto Match
           </h1>
           <p className="text-sm max-w-md mx-auto" style={{ color: "rgba(255,255,255,0.75)" }}>
-            Two AI persona replicas. Six real-life scenarios. Three independent judges.<br />
+            Two AI persona replicas. Six real-life scenarios. Two independent judges.<br />
             Simulate the date before you go on it.
           </p>
         </div>
@@ -232,7 +232,7 @@ export default function Home() {
         {/* Scenario strip */}
         <div className="mb-6 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(212,175,55,0.1)" }}>
           <p className="text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: "rgba(212,175,55,0.6)" }}>
-            6 Simulation Scenarios · Each run {process.env.NEXT_PUBLIC_N_SIMS || "N"}× · Judged by GPT-5.5, Claude Opus 4.7 &amp; Gemini 3
+            6 Simulation Scenarios · Each run {process.env.NEXT_PUBLIC_N_SIMS || "N"}× · Judged by GPT-5.5 &amp; Claude Opus 4.7
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             {SCENARIOS.map((s, i) => (

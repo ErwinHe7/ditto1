@@ -51,12 +51,6 @@ def _run_match_thread(job_id: str, pa_dict: dict, pb_dict: dict):
 
     from app.pipeline.l3_deep import run_l3_deep_match
     from app.models import Profile as P
-    from app.scoring import judges as _j
-    import inspect
-    print("JUDGES FILE:", _j.__file__)
-    print("HAS HOLISTIC:", hasattr(_j, 'judge_holistic'))
-    print("JUDGE_FUNCS:", [x for x in dir(_j) if x.startswith('judge_')])
-
     def on_progress(msg):
         _set(job_id, status="running", progress=msg)
 
