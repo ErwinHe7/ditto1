@@ -7,7 +7,7 @@ def get_conn():
     url = os.getenv("DATABASE_URL", "")
     if not url:
         return None
-    # Railway gives postgres:// — psycopg2 needs postgresql://
+    # Some hosted Postgres providers return postgres://; psycopg2 needs postgresql://.
     url = url.replace("postgres://", "postgresql://", 1)
     return psycopg2.connect(url, cursor_factory=RealDictCursor)
 
