@@ -35,6 +35,7 @@ class BestMatch(BaseModel):
     score: float
     bio: str
     tag: str = ""
+    gender: str = ""
 
 class CompatibilityReport(BaseModel):
     profile_a: Profile

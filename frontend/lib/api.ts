@@ -62,6 +62,7 @@ export interface BestMatch {
   score: number
   bio: string
   tag: string
+  gender?: string
 }
 
 export async function startMatch(pa: Profile, pb: Profile): Promise<MatchStartResponse> {

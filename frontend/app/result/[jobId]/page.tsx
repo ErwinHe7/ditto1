@@ -114,6 +114,15 @@ function CandidateLeadCard({ match, index }: { match: BestMatch; index: number }
             style={{ background: "rgba(168,85,247,0.16)", color: "#c084fc" }}>
             profile-fit lead
           </span>
+          {match.gender && (
+            <span className="text-xs px-2 py-0.5 rounded"
+              style={{
+                background: match.gender.toLowerCase() === "male" ? "rgba(96,165,250,0.16)" : "rgba(244,114,182,0.16)",
+                color: match.gender.toLowerCase() === "male" ? "#93c5fd" : "#f9a8d4",
+              }}>
+              {match.gender.toLowerCase() === "male" ? "Male" : match.gender.toLowerCase() === "female" ? "Female" : match.gender}
+            </span>
+          )}
           {match.tag && <span className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{match.tag}</span>}
         </div>
         <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.65)" }}>{match.bio}</p>

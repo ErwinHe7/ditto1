@@ -28,7 +28,36 @@ const EMPTY: Profile = {
   values: [], deal_breakers: [], looking_for: "",
 }
 
-const GENDER_OPTIONS = ["Female", "Male", "Non-binary", "Bisexual", "Other"]
+const GENDER_OPTIONS = ["Female", "Male", "Non-binary", "Other"]
+
+const PAIRING_GENDERS = {
+  a: "female",
+  b: "male",
+} as const
+
+function genderLabel(gender: string) {
+  const normalized = gender.toLowerCase()
+  if (normalized === "female") return "Female"
+  if (normalized === "male") return "Male"
+  if (normalized === "non-binary") return "Non-binary"
+  return gender || "Other"
+}
+
+function genderColor(gender: string) {
+  const normalized = gender.toLowerCase()
+  if (normalized === "female") return "#f472b6"
+  if (normalized === "male") return "#60a5fa"
+  return "#c084fc"
+}
+
+function isFemaleMalePair(a: Profile, b: Profile) {
+  const genders = [a.gender.toLowerCase(), b.gender.toLowerCase()]
+  return genders.includes("female") && genders.includes("male")
+}
+
+function blankProfile(gender: "female" | "male"): Profile {
+  return { ...EMPTY, gender }
+}
 
 function LaunchOverlay() {
   const [elapsed, setElapsed] = useState(0)
@@ -138,39 +167,63 @@ function Particles() {
   )
 }
 
-function PersonaPicker({ samples, onSelect, onClose, accent }: {
-  samples: Profile[]; onSelect: (p: Profile) => void; onClose: () => void; accent: "gold" | "purple"
+function PersonaPicker({ samples, onSelect, onClose, accent, expectedGender }: {
+  samples: Profile[]
+  onSelect: (p: Profile) => void
+  onClose: () => void
+  accent: "gold" | "purple"
+  expectedGender: "female" | "male"
 }) {
   const color = accent === "gold" ? "#d4af37" : "#a855f7"
+  const orderedSamples = [
+    ...samples.filter(p => p.gender.toLowerCase() === expectedGender),
+    ...samples.filter(p => p.gender.toLowerCase() !== expectedGender),
+  ]
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="rounded-2xl p-6 w-full max-w-lg" style={{ background: "#130e22", border: `1px solid ${color}40` }}>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold" style={{ color }}>Choose a Persona</h3>
+      <div className="rounded-2xl p-6 w-full max-w-xl" style={{ background: "#130e22", border: `1px solid ${color}40` }}>
+        <div className="flex justify-between items-start mb-4 gap-4">
+          <div>
+            <h3 className="font-semibold" style={{ color }}>Choose a Persona</h3>
+            <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.58)" }}>
+              Suggested for {genderLabel(expectedGender)} side. Custom profiles are editable.
+            </p>
+          </div>
           <button onClick={onClose} style={{ color: "rgba(255,255,255,0.65)" }}>✕</button>
         </div>
         <div className="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto">
-          {samples.map(p => (
+          {orderedSamples.map(p => {
+            const gColor = genderColor(p.gender)
+            const suggested = p.gender.toLowerCase() === expectedGender
+            return (
             <button key={p.name} onClick={() => { onSelect(p); onClose() }}
               className="text-left rounded-xl p-3 transition-all"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = `${color}60`)}
               onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span className="text-sm font-semibold" style={{ color: "#ffffff" }}>{p.name}</span>
                 <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: `${color}20`, color }}>
                   {PERSONA_TAGS[p.name] || "👤 Custom"}
                 </span>
+                <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: `${gColor}20`, color: gColor }}>
+                  {genderLabel(p.gender)}
+                </span>
+                {suggested && (
+                  <span className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(212,175,55,0.72)" }}>
+                    suggested
+                  </span>
+                )}
               </div>
               <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>{p.bio.slice(0, 60)}...</p>
             </button>
-          ))}
+          )})}
         </div>
-        <button onClick={onClose} className="mt-4 w-full text-xs py-2 rounded-xl"
-          style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.75)" }}>
-          Enter custom profile instead
+        <button onClick={() => { onSelect(blankProfile(expectedGender)); onClose() }} className="mt-4 w-full text-xs py-2 rounded-xl"
+          style={{ background: `${color}12`, color, border: `1px solid ${color}30` }}>
+          Start custom {genderLabel(expectedGender)} profile
         </button>
       </div>
     </div>
@@ -190,7 +243,13 @@ function ProfileForm({ label, value, onChange, accent, onPickTemplate, samples }
     <div className="flex-1 min-w-0 rounded-2xl p-5 flex flex-col gap-3"
       style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${borderColor}` }}>
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-sm font-bold" style={{ color }}>{label}</h2>
+        <div>
+          <h2 className="text-sm font-bold" style={{ color }}>{label}</h2>
+          <span className="text-xs px-1.5 py-0.5 rounded inline-block mt-1"
+            style={{ background: `${genderColor(value.gender)}20`, color: genderColor(value.gender) }}>
+            {genderLabel(value.gender)}
+          </span>
+        </div>
         <button onClick={onPickTemplate} className="text-xs px-3 py-1 rounded-full"
           style={{ background: `${color}18`, color, border: `1px solid ${color}40` }}>
           Pick persona ↗
@@ -261,13 +320,20 @@ export default function Home() {
   useEffect(() => {
     getSampleProfiles().then(s => {
       setSamples(s)
-      if (s.length >= 2) { setPa(s[0]); setPb(s[1]) }
+      const female = s.find(p => p.gender.toLowerCase() === "female")
+      const male = s.find(p => p.gender.toLowerCase() === "male")
+      if (female && male) { setPa(female); setPb(male) }
+      else if (s.length >= 2) { setPa(s[0]); setPb(s[1]) }
     })
   }, [])
 
   const submit = async () => {
     if (!pa.name || !pb.name || !pa.bio || !pb.bio) {
       setErr("Fill in at least Name and Bio for both people.")
+      return
+    }
+    if (!isFemaleMalePair(pa, pb)) {
+      setErr("For this demo, choose one Female and one Male profile. Custom profiles still work: set the gender fields before running.")
       return
     }
     setErr("")
@@ -302,6 +368,7 @@ export default function Home() {
           accent={picker === "a" ? "gold" : "purple"}
           onSelect={p => picker === "a" ? setPa(p) : setPb(p)}
           onClose={() => setPicker(null)}
+          expectedGender={PAIRING_GENDERS[picker]}
         />
       )}
 

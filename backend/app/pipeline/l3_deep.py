@@ -183,9 +183,20 @@ def _calibrated_score(raw: float, minimum: float, maximum: float) -> float:
     score = 50.0 + raw * 0.22 + relative * 22.0
     return max(45.0, min(92.0, score))
 
+def _opposite_gender_candidates(person: Profile, candidates: list[Profile]) -> list[Profile]:
+    gender = person.gender.lower()
+    if gender == "female":
+        return [candidate for candidate in candidates if candidate.gender.lower() == "male"]
+    if gender == "male":
+        return [candidate for candidate in candidates if candidate.gender.lower() == "female"]
+    return candidates
+
 async def _find_best_matches(pa: Profile, pb: Profile, candidates: list[Profile]) -> dict:
     def score_candidates(person: Profile):
-        raw_scores = [(candidate, _profile_affinity(person, candidate)) for candidate in others]
+        eligible = _opposite_gender_candidates(person, others)
+        if not eligible:
+            eligible = others
+        raw_scores = [(candidate, _profile_affinity(person, candidate)) for candidate in eligible]
         raw_values = [score for _, score in raw_scores]
         minimum = min(raw_values, default=0.0)
         maximum = max(raw_values, default=1.0)
@@ -200,6 +211,7 @@ async def _find_best_matches(pa: Profile, pb: Profile, candidates: list[Profile]
             score=round(score, 1),
             bio=candidate.bio[:100],
             tag=candidate.communication_style,
+            gender=candidate.gender,
         )
 
     others = [p for p in candidates if p.name not in (pa.name, pb.name)]

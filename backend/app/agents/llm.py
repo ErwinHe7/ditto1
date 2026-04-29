@@ -16,7 +16,6 @@ async def chat(msgs: list[dict], model: str, temperature=0.9, max_tokens=200, js
     kwargs = {
         "model": model,
         "messages": msgs,
-        "temperature": temperature,
         "max_tokens": max_tokens,
     }
     if json_mode:
