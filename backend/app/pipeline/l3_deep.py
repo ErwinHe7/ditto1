@@ -10,7 +10,7 @@ from app.scenarios.definitions import SCENARIOS
 from app.scoring.judges import judge_chemistry, judge_values
 from app.scoring.aggregator import aggregate
 
-N_LOOPS = 3
+N_LOOPS = 7
 ACTIVE_SCENARIO_IDS = {
     "first_coffee",
     "late_night_vulnerable",
@@ -334,3 +334,48 @@ async def run_l3_deep_match(pa: Profile, pb: Profile, n_sims=None, on_progress=N
         "pa_best_matches": best["pa_best"],
         "pb_best_matches": best["pb_best"],
     })
+
+
+async def find_top_matches_via_simulation(
+    target: Profile,
+    candidates: list[Profile],
+    top_n: int = 3,
+    on_progress=None,
+) -> list[CompatibilityReport]:
+    """
+    Tiered auto-matching: L1 coarse -> L2 light sim -> L3 deep sim.
+
+      L1 (ms):  embedding-style cosine over the full candidate pool   -> top max(6, top_n*2)
+      L2 (s):   1 scenario x 3 turns x 1 judge per pair                -> top top_n
+      L3 (min): full ACTIVE_SCENARIOS x N_LOOPS x judges per pair      -> ranked
+
+    Returns top_n CompatibilityReports, sorted by overall_score desc.
+    Each report carries the same fields as run_l3_deep_match output (transcripts,
+    judge scores, affection tips, etc.) so the existing match UI can render them.
+    """
+    from app.pipeline.l1_coarse import l1_coarse_filter
+    from app.pipeline.l2_medium import l2_medium_filter
+
+    pool = [c for c in candidates if c.name.lower() != target.name.lower()]
+
+    if on_progress:
+        on_progress(f"L1 coarse scan over {len(pool)} candidates...")
+    l1_pool = await l1_coarse_filter(target, pool, top_k=max(6, top_n * 2))
+
+    if on_progress:
+        on_progress(f"L2 light simulation across {len(l1_pool)} candidates...")
+    l2_pool = await l2_medium_filter(target, l1_pool, top_k=top_n)
+
+    reports: list[CompatibilityReport] = []
+    for i, candidate in enumerate(l2_pool):
+        if on_progress:
+            on_progress(f"L3 deep date {i+1}/{len(l2_pool)}: {target.name} x {candidate.name}")
+        try:
+            report = await run_l3_deep_match(target, candidate, on_progress=None)
+            reports.append(report)
+        except Exception as e:
+            if on_progress:
+                on_progress(f"  skipped {candidate.name}: {e}")
+
+    reports.sort(key=lambda r: r.overall_score, reverse=True)
+    return reports[:top_n]

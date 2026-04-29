@@ -4,7 +4,7 @@ import os
 from fastapi import APIRouter
 from pydantic import BaseModel
 from app.models import Profile
-from app.pipeline.l3_deep import run_l3_deep_match, scout_profile_matches
+from app.pipeline.l3_deep import run_l3_deep_match, scout_profile_matches, find_top_matches_via_simulation
 from app import db as DB
 
 router = APIRouter()
@@ -98,6 +98,50 @@ def scout_matches(req: ScoutRequest):
     top_n = max(1, min(req.top_n, 5))
     matches = scout_profile_matches(req.profile, candidates, top_n=top_n)
     return {"matches": [json.loads(m.model_dump_json()) for m in matches]}
+
+@router.post("/match/top")
+async def find_top_matches(req: ScoutRequest):
+    """
+    Tiered auto-match: L1 coarse -> L2 light sim -> L3 deep sim.
+    Picks top_n best candidates from sample_profiles.json by actually
+    simulating dates, not just keyword affinity.
+    """
+    job_id = str(uuid.uuid4())[:8]
+    progress = "starting tiered match..."
+
+    def on_progress(msg):
+        nonlocal progress
+        progress = msg
+        _set(job_id, status="running", progress=msg)
+
+    _set(job_id, status="running", progress=progress)
+
+    with open(os.path.abspath(PROFILES_PATH)) as f:
+        candidates = [Profile(**p) for p in json.load(f)]
+
+    top_n = max(1, min(req.top_n, 5))
+    try:
+        reports = await find_top_matches_via_simulation(
+            req.profile, candidates, top_n=top_n, on_progress=on_progress
+        )
+        reports_json = [json.loads(r.model_dump_json()) for r in reports]
+        _set(job_id, status="done", progress="complete", reports=reports_json)
+        return {
+            "job_id": job_id,
+            "status": "done",
+            "progress": "complete",
+            "reports": reports_json,
+        }
+    except Exception as e:
+        import traceback
+        detail = traceback.format_exc()[:1500]
+        _set(job_id, status="error", progress=str(e), error_detail=detail)
+        return {
+            "job_id": job_id,
+            "status": "error",
+            "progress": str(e),
+            "error_detail": detail[:400],
+        }
 
 @router.get("/sample-profiles")
 def get_sample_profiles():

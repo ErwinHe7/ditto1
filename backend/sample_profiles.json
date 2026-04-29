@@ -86,5 +86,71 @@
     "values": ["discipline", "growth", "health", "team spirit"],
     "deal_breakers": ["passive about their own life", "unhealthy lifestyle"],
     "looking_for": "A partner who has their own thing going and shows up fully"
+  },
+  {
+    "name": "Lucas",
+    "age": 24,
+    "gender": "male",
+    "bio": "Climate researcher and weekend climber. I spend a lot of time outside and I think the best conversations happen on long walks. I cook the same three dishes and I'm fine with that.",
+    "interests": ["rock climbing", "climate science", "trail running", "documentaries", "fermentation", "campfires", "long drives"],
+    "communication_style": "calm, observant, dry humor, takes a beat before answering",
+    "values": ["integrity", "patience", "stewardship", "presence"],
+    "deal_breakers": ["careless about the planet", "can't be alone"],
+    "looking_for": "Someone who finds going slow as interesting as going fast"
+  },
+  {
+    "name": "Sophie",
+    "age": 22,
+    "gender": "female",
+    "bio": "Sustainable fashion design student. I sew, I sketch, I argue about supply chains at parties. Vintage Levi's are a love language. I want a life that is beautiful and ethical, in that order maybe.",
+    "interests": ["sustainable design", "vintage shopping", "sewing", "natural dyes", "art history", "coffee shops", "Greek mythology"],
+    "communication_style": "warm, expressive, asks pointed questions, surprisingly sharp",
+    "values": ["craft", "ethics", "beauty", "honesty"],
+    "deal_breakers": ["fast fashion defenders", "performatively cool"],
+    "looking_for": "Someone who has taste and a conscience, plus the patience for both"
+  },
+  {
+    "name": "Theo",
+    "age": 25,
+    "gender": "male",
+    "bio": "Indie musician, part-time barista, full-time over-thinker. I write songs about strangers I see on the train. I'm soft but not a pushover. I take a long time to know but I'll show up forever.",
+    "interests": ["songwriting", "vinyl records", "film scores", "open mics", "philosophy", "long walks", "tea"],
+    "communication_style": "soft-spoken, reflective, lyrical, listens more than talks",
+    "values": ["honesty", "art", "loyalty", "tenderness"],
+    "deal_breakers": ["dishonesty", "needs constant performance"],
+    "looking_for": "A quiet kind of love that we both write into something"
+  },
+  {
+    "name": "Priya",
+    "age": 23,
+    "gender": "female",
+    "bio": "Pre-med, ex-debate team captain, eldest daughter energy. I plan my weekends and my decade. I want big things and I'm not embarrassed about it. Don't try to out-argue me at dinner.",
+    "interests": ["medicine", "debate", "policy", "running", "Bollywood films", "south indian food", "true crime podcasts"],
+    "communication_style": "sharp, fast, articulate, secretly soft",
+    "values": ["family", "ambition", "fairness", "service"],
+    "deal_breakers": ["lazy thinkers", "disrespects elders"],
+    "looking_for": "A partner who has their own ambition and respects mine"
+  },
+  {
+    "name": "Daniel",
+    "age": 26,
+    "gender": "male",
+    "bio": "Building a B2B SaaS company. Wake up at 5, gym at 6, calls from 7. I was the kid who color-coded his binders. I'm trying to be less rigid and more fun. Help.",
+    "interests": ["startups", "weightlifting", "biohacking", "stoicism", "chess", "espresso", "running"],
+    "communication_style": "direct, structured, surprisingly self-aware, getting better at listening",
+    "values": ["ambition", "discipline", "loyalty", "growth"],
+    "deal_breakers": ["no goals", "victim mindset"],
+    "looking_for": "Someone driven who'll also drag me away from my laptop"
+  },
+  {
+    "name": "Alex",
+    "age": 22,
+    "gender": "non-binary",
+    "bio": "Contemporary dancer and spoken-word poet. I move for a living and I feel things at high resolution. I cry at commercials. I'm not sorry about it.",
+    "interests": ["modern dance", "poetry slams", "queer theory", "tarot", "dive bars", "thrift stores", "live shows"],
+    "communication_style": "expressive, emotionally fluent, playful, uses metaphor a lot",
+    "values": ["authenticity", "expression", "tenderness", "freedom"],
+    "deal_breakers": ["emotionally guarded", "judgmental"],
+    "looking_for": "Someone who feels deeply and isn't afraid to be a person about it"
   }
 ]
