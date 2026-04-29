@@ -185,12 +185,18 @@ export default function Home() {
     setErr("")
     setLoading(true)
     try {
-      const { job_id } = await startMatch(pa, pb)
+      const data = await startMatch(pa, pb)
+      if (data.status === "error") {
+        throw new Error(data.error_detail || data.progress || "Simulation failed")
+      }
       // store all profiles in sessionStorage for result page
       sessionStorage.setItem("all_profiles", JSON.stringify(samples))
       sessionStorage.setItem("pa", JSON.stringify(pa))
       sessionStorage.setItem("pb", JSON.stringify(pb))
-      router.push(`/result/${job_id}`)
+      if (data.report) {
+        sessionStorage.setItem(`report:${data.job_id}`, JSON.stringify(data.report))
+      }
+      router.push(`/result/${data.job_id}`)
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : String(e))
       setLoading(false)

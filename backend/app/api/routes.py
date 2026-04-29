@@ -1,16 +1,16 @@
 import json
 import uuid
-import asyncio
-import threading
 import os
 from fastapi import APIRouter
 from pydantic import BaseModel
 from app.models import Profile
+from app.pipeline.l3_deep import run_l3_deep_match
 from app import db as DB
 
 router = APIRouter()
 
-# In-memory fallback (used when no DATABASE_URL set)
+# In-memory fallback for local/dev. Production requests also return the report
+# directly so Vercel does not need background threads or a database to display it.
 _mem: dict[str, dict] = {}
 
 PROFILES_PATH = os.path.join(os.path.dirname(__file__), "../../sample_profiles.json")
@@ -37,44 +37,37 @@ class MatchRequest(BaseModel):
     profile_a: Profile
     profile_b: Profile
 
-def _run_match_thread(job_id: str, pa_dict: dict, pb_dict: dict):
-    import sys, os
-    # ensure the backend dir is first in path so app.* imports our code, not anything else
-    backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    if backend_dir not in sys.path:
-        sys.path.insert(0, backend_dir)
+@router.post("/match")
+async def start_match(req: MatchRequest):
+    job_id = str(uuid.uuid4())[:8]
+    progress = "starting..."
 
-    # force reimport to pick up correct module — critical on Windows threading
-    for key in list(sys.modules.keys()):
-        if key.startswith("app."):
-            del sys.modules[key]
-
-    from app.pipeline.l3_deep import run_l3_deep_match
-    from app.models import Profile as P
     def on_progress(msg):
+        nonlocal progress
+        progress = msg
         _set(job_id, status="running", progress=msg)
 
-    _set(job_id, status="running", progress="starting...")
+    _set(job_id, status="running", progress=progress)
     try:
-        pa, pb = P(**pa_dict), P(**pb_dict)
-        report = asyncio.run(run_l3_deep_match(pa, pb, on_progress=on_progress))
-        _set(job_id, status="done", progress="complete",
-             report=json.loads(report.model_dump_json()))
+        report = await run_l3_deep_match(req.profile_a, req.profile_b, on_progress=on_progress)
+        report_json = json.loads(report.model_dump_json())
+        _set(job_id, status="done", progress="complete", report=report_json)
+        return {
+            "job_id": job_id,
+            "status": "done",
+            "progress": "complete",
+            "report": report_json,
+        }
     except Exception as e:
         import traceback
-        _set(job_id, status="error", progress=str(e),
-             error_detail=traceback.format_exc()[:1500])
-
-@router.post("/match")
-def start_match(req: MatchRequest):
-    job_id = str(uuid.uuid4())[:8]
-    _set(job_id, status="pending", progress="")
-    threading.Thread(
-        target=_run_match_thread,
-        args=(job_id, req.profile_a.model_dump(), req.profile_b.model_dump()),
-        daemon=True
-    ).start()
-    return {"job_id": job_id}
+        detail = traceback.format_exc()[:1500]
+        _set(job_id, status="error", progress=str(e), error_detail=detail)
+        return {
+            "job_id": job_id,
+            "status": "error",
+            "progress": str(e),
+            "error_detail": detail[:400],
+        }
 
 @router.get("/match/{job_id}")
 def get_match(job_id: str):

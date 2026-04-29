@@ -78,6 +78,34 @@ async def _judge_transcript(transcript, pa_d, pb_d, sem: asyncio.Semaphore) -> l
         )
         return list(scores)
 
+async def _run_scenario_batch(
+    scenario: dict,
+    scenario_idx: int,
+    total_scenarios: int,
+    n: int,
+    pa: Profile,
+    pb: Profile,
+    pa_d: dict,
+    pb_d: dict,
+    sem: asyncio.Semaphore,
+    on_progress=None,
+) -> ScenarioResult:
+    if on_progress:
+        on_progress(f"scenario {scenario_idx+1}/{total_scenarios}: {scenario['name']} ({n} loops)")
+
+    transcripts = await asyncio.gather(*[_run_sim(pa, pb, scenario, sem) for _ in range(n)])
+    batches = await asyncio.gather(*[_judge_transcript(t, pa_d, pb_d, sem) for t in transcripts])
+    all_scores = [s for b in batches for s in b]
+
+    return ScenarioResult(
+        scenario_id=scenario["id"],
+        scenario_name=scenario["name"],
+        transcripts=[list(t) for t in transcripts],
+        judge_scores=all_scores,
+        avg_score=0.0,
+        trimmed_avg_score=0.0,
+    )
+
 def _profile_text(profile: Profile) -> str:
     parts = [
         profile.bio,
@@ -195,23 +223,10 @@ async def run_l3_deep_match(pa: Profile, pb: Profile, n_sims=None, on_progress=N
     pa_d, pb_d = pa.model_dump(), pb.model_dump()
     total_scenarios = len(ACTIVE_SCENARIOS)
 
-    scenario_results = []
-    for i, scenario in enumerate(ACTIVE_SCENARIOS):
-        if on_progress:
-            on_progress(f"scenario {i+1}/{total_scenarios}: {scenario['name']} ({n} loops)")
-
-        transcripts = await asyncio.gather(*[_run_sim(pa, pb, scenario, sem) for _ in range(n)])
-        batches = await asyncio.gather(*[_judge_transcript(t, pa_d, pb_d, sem) for t in transcripts])
-        all_scores = [s for b in batches for s in b]
-
-        scenario_results.append(ScenarioResult(
-            scenario_id=scenario["id"],
-            scenario_name=scenario["name"],
-            transcripts=[list(t) for t in transcripts],
-            judge_scores=all_scores,
-            avg_score=0.0,
-            trimmed_avg_score=0.0,
-        ))
+    scenario_results = await asyncio.gather(*[
+        _run_scenario_batch(scenario, i, total_scenarios, n, pa, pb, pa_d, pb_d, sem, on_progress)
+        for i, scenario in enumerate(ACTIVE_SCENARIOS)
+    ])
 
     report = await aggregate(scenario_results, pa, pb)
 

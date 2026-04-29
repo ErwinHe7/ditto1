@@ -255,19 +255,32 @@ export default function ResultPage() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
+    const cached = sessionStorage.getItem(`report:${jobId}`)
+    if (cached) {
+      setReport(JSON.parse(cached) as CompatibilityReport)
+      setStatus("done")
+      setProgress("complete")
+      return
+    }
+
     const poll = async () => {
       const data = await getMatch(jobId)
       setStatus(data.status)
       setProgress(data.progress)
       if (data.report) {
         setReport(data.report as CompatibilityReport)
-        clearInterval(intervalRef.current!)
+        if (intervalRef.current) clearInterval(intervalRef.current)
       }
-      if (data.status === "error") { setErrDetail(data.error_detail || ""); clearInterval(intervalRef.current!) }
+      if (data.status === "error") {
+        setErrDetail(data.error_detail || "")
+        if (intervalRef.current) clearInterval(intervalRef.current)
+      }
     }
     poll()
     intervalRef.current = setInterval(poll, 2000)
-    return () => clearInterval(intervalRef.current!)
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
   }, [jobId])
 
   if (status === "error") {

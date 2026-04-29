@@ -53,6 +53,10 @@ export interface MatchStatus {
   error_detail?: string
 }
 
+export interface MatchStartResponse extends MatchStatus {
+  report?: CompatibilityReport
+}
+
 export interface BestMatch {
   name: string
   score: number
@@ -60,7 +64,7 @@ export interface BestMatch {
   tag: string
 }
 
-export async function startMatch(pa: Profile, pb: Profile): Promise<{ job_id: string }> {
+export async function startMatch(pa: Profile, pb: Profile): Promise<MatchStartResponse> {
   const r = await fetch(`${BASE}/match`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
