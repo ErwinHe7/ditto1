@@ -7,9 +7,15 @@ from app.graph.state import SimulationState
 from app.scenarios.definitions import SCENARIOS
 from app.scoring.judges import judge_chemistry, judge_values
 from app.scoring.aggregator import aggregate
-from app.config import settings
 
-N_LOOPS = 5
+N_LOOPS = 3
+ACTIVE_SCENARIO_IDS = {
+    "first_coffee",
+    "late_night_vulnerable",
+    "minor_conflict",
+    "support_under_stress",
+}
+ACTIVE_SCENARIOS = [s for s in SCENARIOS if s["id"] in ACTIVE_SCENARIO_IDS]
 
 async def _run_sim(pa: Profile, pb: Profile, scenario: dict, sem: asyncio.Semaphore) -> list[dict]:
     async with sem:
@@ -33,29 +39,44 @@ async def _judge_transcript(transcript, pa_d, pb_d, sem: asyncio.Semaphore) -> l
         )
         return list(scores)
 
-async def _quick_score(pa: Profile, pb: Profile, sem: asyncio.Semaphore) -> float:
-    scenario = SCENARIOS[0]  # first_coffee — fastest
-    transcript = await _run_sim(pa, pb, scenario, sem)
-    scores = await asyncio.gather(
-        judge_chemistry(transcript, pa.model_dump(), pb.model_dump()),
-        judge_values(transcript, pa.model_dump(), pb.model_dump()),
-    )
-    return sum(s.overall for s in scores) / 2
+def _norm_items(items: list[str]) -> set[str]:
+    return {item.strip().lower() for item in items if item and item.strip()}
 
-async def _find_best_matches(pa: Profile, pb: Profile, candidates: list[Profile], sem: asyncio.Semaphore) -> dict:
-    async def score_one(person: Profile, candidate: Profile):
-        try:
-            s = await _quick_score(person, candidate, sem)
-            return BestMatch(name=candidate.name, score=round(s, 1),
-                             bio=candidate.bio[:100], tag=candidate.communication_style)
-        except Exception as e:
-            import traceback; traceback.print_exc()
-            return None
+def _overlap_score(a: set[str], b: set[str]) -> float:
+    if not a and not b:
+        return 50.0
+    if not a or not b:
+        return 20.0
+    return 100.0 * len(a & b) / len(a | b)
+
+def _text_overlap_score(a: Profile, b: Profile) -> float:
+    left = f"{a.bio} {a.communication_style} {a.looking_for}".lower().replace(",", " ")
+    right = f"{b.bio} {b.communication_style} {b.looking_for}".lower().replace(",", " ")
+    stop = {"and", "the", "for", "with", "who", "that", "this", "you", "someone", "looking"}
+    a_words = {w for w in left.split() if len(w) > 3 and w not in stop}
+    b_words = {w for w in right.split() if len(w) > 3 and w not in stop}
+    return _overlap_score(a_words, b_words)
+
+def _profile_affinity(person: Profile, candidate: Profile) -> float:
+    interest_score = _overlap_score(_norm_items(person.interests), _norm_items(candidate.interests))
+    values_score = _overlap_score(_norm_items(person.values), _norm_items(candidate.values))
+    text_score = _text_overlap_score(person, candidate)
+    age_score = max(0.0, 100.0 - abs(person.age - candidate.age) * 7.0)
+    return 0.35 * values_score + 0.25 * interest_score + 0.25 * text_score + 0.15 * age_score
+
+async def _find_best_matches(pa: Profile, pb: Profile, candidates: list[Profile]) -> dict:
+    def score_one(person: Profile, candidate: Profile):
+        return BestMatch(
+            name=candidate.name,
+            score=round(_profile_affinity(person, candidate), 1),
+            bio=candidate.bio[:100],
+            tag=candidate.communication_style,
+        )
 
     others = [p for p in candidates if p.name not in (pa.name, pb.name)]
 
-    pa_scores = [r for r in await asyncio.gather(*[score_one(pa, c) for c in others]) if r]
-    pb_scores = [r for r in await asyncio.gather(*[score_one(pb, c) for c in others]) if r]
+    pa_scores = [score_one(pa, c) for c in others]
+    pb_scores = [score_one(pb, c) for c in others]
 
     return {
         "pa_best": sorted(pa_scores, key=lambda x: x.score, reverse=True)[:2],
@@ -71,11 +92,12 @@ async def run_l3_deep_match(pa: Profile, pb: Profile, n_sims=None, on_progress=N
     n = n_sims or N_LOOPS
     sem = asyncio.Semaphore(30)
     pa_d, pb_d = pa.model_dump(), pb.model_dump()
+    total_scenarios = len(ACTIVE_SCENARIOS)
 
     scenario_results = []
-    for i, scenario in enumerate(SCENARIOS):
+    for i, scenario in enumerate(ACTIVE_SCENARIOS):
         if on_progress:
-            on_progress(f"scenario {i+1}/6: {scenario['name']} ({n} loops)")
+            on_progress(f"scenario {i+1}/{total_scenarios}: {scenario['name']} ({n} loops)")
 
         transcripts = await asyncio.gather(*[_run_sim(pa, pb, scenario, sem) for _ in range(n)])
         batches = await asyncio.gather(*[_judge_transcript(t, pa_d, pb_d, sem) for t in transcripts])
@@ -93,12 +115,11 @@ async def run_l3_deep_match(pa: Profile, pb: Profile, n_sims=None, on_progress=N
     report = await aggregate(scenario_results, pa, pb)
 
     if on_progress:
-        on_progress("scanning candidate pool for best matches...")
+        on_progress("ranking candidate pool for best matches...")
 
     all_profiles = _load_all_profiles()
-    best = await _find_best_matches(pa, pb, all_profiles, sem)
+    best = await _find_best_matches(pa, pb, all_profiles)
 
-    # rebuild report with best matches included (Pydantic model_copy)
     return report.model_copy(update={
         "pa_best_matches": best["pa_best"],
         "pb_best_matches": best["pb_best"],

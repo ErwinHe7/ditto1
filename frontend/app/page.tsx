@@ -8,8 +8,6 @@ const SCENARIOS = [
   { name: "☕ First Coffee Date", desc: "First IRL meeting. Awkward, curious, real." },
   { name: "🌙 3am Conversation", desc: "Late night texting — someone goes vulnerable." },
   { name: "⚡ Values Disagreement", desc: "Casual chat turns into a real clash." },
-  { name: "✈️ Trip Planning", desc: "4-day trip, tight budget. Priorities exposed." },
-  { name: "👥 Meeting the Friends", desc: "Group dinner. Social chemistry tested." },
   { name: "🤝 Hard Day Support", desc: "One person is struggling. Attunement check." },
 ]
 
@@ -224,7 +222,7 @@ export default function Home() {
             Ditto Match
           </h1>
           <p className="text-sm max-w-md mx-auto" style={{ color: "rgba(255,255,255,0.75)" }}>
-            Two AI persona replicas. Six real-life scenarios. Two independent judges.<br />
+            Two AI persona replicas. Four high-signal scenarios. Two independent judges.<br />
             Simulate the date before you go on it.
           </p>
         </div>
@@ -232,9 +230,9 @@ export default function Home() {
         {/* Scenario strip */}
         <div className="mb-6 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(212,175,55,0.1)" }}>
           <p className="text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: "rgba(212,175,55,0.6)" }}>
-            6 Simulation Scenarios · Each run {process.env.NEXT_PUBLIC_N_SIMS || "N"}× · Judged by GPT-5.5 &amp; Claude Opus 4.7
+            4 Simulation Scenarios · Each run 3× · Judged by GPT-5.5 &amp; Claude Opus 4.7
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {SCENARIOS.map((s, i) => (
               <div key={i} className="rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.03)" }}>
                 <p className="text-sm font-medium" style={{ color: "#f5f0ff" }}>{s.name}</p>
@@ -262,7 +260,7 @@ export default function Home() {
             {loading ? "Launching Simulation..." : "✦ Run Compatibility Simulation"}
           </button>
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
-            ~3–8 min for N=5 · Best-match recommendations included
+            ~1–3 min · Fast best-match recommendations included
           </p>
         </div>
       </div>

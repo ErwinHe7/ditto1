@@ -206,8 +206,8 @@ function LoadingScreen({ progress, jobId }: { progress: string; jobId: string })
     return () => { clearInterval(d); clearInterval(m) }
   }, [])
 
-  const knownScenarios = ["first_coffee", "late_night_vulnerable", "minor_conflict", "travel_planning", "meet_friends", "support_under_stress"]
-  const currentMatch = progress.match(/scenario (\d+)\/6/)
+  const loadingScenarios = ["☕ First Coffee", "🌙 3am Talk", "⚡ Conflict", "🤝 Hard Day"]
+  const currentMatch = progress.match(/scenario (\d+)\/(\d+)/)
   const currentScenario = currentMatch ? +currentMatch[1] - 1 : -1
 
   return (
@@ -224,7 +224,7 @@ function LoadingScreen({ progress, jobId }: { progress: string; jobId: string })
 
         {/* Scenario progress */}
         <div className="space-y-2 mb-8 text-left">
-          {["☕ First Coffee", "🌙 3am Talk", "⚡ Conflict", "✈️ Trip Plan", "👥 Friends", "🤝 Hard Day"].map((s, i) => (
+          {loadingScenarios.map((s, i) => (
             <div key={i} className="flex items-center gap-3">
               <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
                 style={{
@@ -327,7 +327,7 @@ export default function ResultPage() {
             {pa.name} × {pb.name}
           </h1>
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
-            6 scenarios · {nSims} loops each · 2 judges · pool scan included
+            {report.scenario_results.length} scenarios · {nSims} loops each · 2 judges · fast pool scan included
           </p>
         </div>
 

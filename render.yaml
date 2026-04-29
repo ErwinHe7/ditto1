@@ -14,7 +14,7 @@ services:
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: N_SIMULATIONS_PER_SCENARIO
-        value: "10"
+        value: "3"
       - key: LLM_CONCURRENCY
         value: "15"
       - key: DATABASE_URL
