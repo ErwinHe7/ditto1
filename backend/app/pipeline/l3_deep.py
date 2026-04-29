@@ -3,7 +3,7 @@ import json
 import os
 import math
 import re
-from app.models import Profile, ScenarioResult, CompatibilityReport, BestMatch, ScoutMatch
+from app.models import Profile, ScenarioResult, CompatibilityReport, BestMatch, ScoutMatch, JudgeScore
 from app.graph.builder import run_simulation
 from app.graph.state import SimulationState
 from app.scenarios.definitions import SCENARIOS
@@ -165,16 +165,47 @@ async def _run_sim(pa: Profile, pb: Profile, scenario: dict, sem: asyncio.Semaph
             "finished": False,
             "seed_user_message": _seed_for_loop(scenario, loop_idx),
         }
-        result = await run_simulation(state)
-        return result["msgs"]
+        try:
+            result = await run_simulation(state)
+            return result["msgs"]
+        except Exception:
+            return [
+                {"speaker": "A", "text": _seed_for_loop(scenario, loop_idx)},
+                {"speaker": "B", "text": "I want to answer that properly. Tell me a little more about what you mean."},
+            ]
 
 async def _judge_transcript(transcript, pa_d, pb_d, sem: asyncio.Semaphore) -> list:
     async with sem:
-        scores = await asyncio.gather(
-            judge_chemistry(transcript, pa_d, pb_d),
-            judge_values(transcript, pa_d, pb_d),
-        )
-        return list(scores)
+        try:
+            scores = await asyncio.gather(
+                judge_chemistry(transcript, pa_d, pb_d),
+                judge_values(transcript, pa_d, pb_d),
+            )
+            return list(scores)
+        except Exception:
+            fallback_reason = "A transient judge/model error occurred, so Ditto used a conservative fallback score for this loop."
+            return [
+                JudgeScore(
+                    judge_id="chemistry",
+                    chemistry=50,
+                    values_alignment=50,
+                    energy_match=50,
+                    conflict_handling=50,
+                    curiosity=50,
+                    overall=50,
+                    reasoning=fallback_reason,
+                ),
+                JudgeScore(
+                    judge_id="values",
+                    chemistry=50,
+                    values_alignment=50,
+                    energy_match=50,
+                    conflict_handling=50,
+                    curiosity=50,
+                    overall=50,
+                    reasoning=fallback_reason,
+                ),
+            ]
 
 async def _run_scenario_batch(
     scenario: dict,

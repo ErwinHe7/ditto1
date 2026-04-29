@@ -510,7 +510,7 @@ export default function Home() {
         <div className="flex flex-col items-center gap-2">
           <button onClick={scoutPool} disabled={loading || scouting} className="text-sm px-5 py-3 rounded-xl"
             style={{ background: "rgba(168,85,247,0.14)", color: "#c084fc", border: "1px solid rgba(168,85,247,0.32)" }}>
-            {scouting ? "Running L1/L2 Dates..." : "Find Top 3 With Auto-Date"}
+            {scouting ? "Running L1/L2 Dates..." : "Find Top 3 Matches"}
           </button>
           <button onClick={submit} disabled={loading || scouting} className="btn-gold">
             {loading ? "Launching Simulation..." : "✦ Run Compatibility Simulation"}

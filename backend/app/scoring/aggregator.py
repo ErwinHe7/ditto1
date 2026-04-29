@@ -38,7 +38,13 @@ async def aggregate(scenario_results: list[ScenarioResult], pa: Profile, pb: Pro
     else:
         rec = "skip"
 
-    summary = await generate_summary(scenario_results, pa, pb)
+    try:
+        summary = await generate_summary(scenario_results, pa, pb)
+    except Exception:
+        summary = (
+            f"{pa.name} and {pb.name} were scored from simulated scenario transcripts, "
+            "but the summary model had a transient error. Use the scenario scores and judge notes below for the detailed read."
+        )
     return CompatibilityReport(
         profile_a=pa, profile_b=pb,
         scenario_results=scenario_results,
