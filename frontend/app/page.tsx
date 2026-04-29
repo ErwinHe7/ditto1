@@ -30,6 +30,94 @@ const EMPTY: Profile = {
 
 const GENDER_OPTIONS = ["Female", "Male", "Non-binary", "Bisexual", "Other"]
 
+function LaunchOverlay() {
+  const [elapsed, setElapsed] = useState(0)
+
+  useEffect(() => {
+    const t = setInterval(() => setElapsed(v => v + 1), 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  const phase = elapsed < 8 ? 0 : elapsed < 24 ? 1 : elapsed < 38 ? 2 : 3
+  const phases = [
+    "Building persona replicas",
+    "Running scenario agents",
+    "Consulting GPT + Claude judges",
+    "Synthesizing match report",
+  ]
+  const activeScenario = phase === 1 ? Math.min(SCENARIOS.length - 1, Math.floor((elapsed - 8) / 4)) : -1
+  const scenarioState = (index: number) => {
+    if (phase === 0) return { label: "Queued", active: false, done: false }
+    if (phase === 1) {
+      if (index < activeScenario) return { label: "3 loops drafted", active: false, done: true }
+      if (index === activeScenario) return { label: "Simulating 3 loops", active: true, done: false }
+      return { label: "Queued", active: false, done: false }
+    }
+    if (phase === 2) return { label: "GPT + Claude scoring", active: true, done: false }
+    return { label: "Folded into report", active: false, done: true }
+  }
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center px-4"
+      style={{ background: "rgba(8,5,16,0.86)", backdropFilter: "blur(10px)" }}>
+      <div className="w-full max-w-xl rounded-2xl p-6 fade-up"
+        style={{ background: "#130e22", border: "1px solid rgba(212,175,55,0.22)" }}>
+        <div className="flex items-start justify-between gap-4 mb-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "rgba(212,175,55,0.65)" }}>
+              Agent run in progress
+            </p>
+            <h2 className="text-2xl font-bold"
+              style={{ background: "linear-gradient(135deg, #d4af37, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              {phases[phase]}
+            </h2>
+          </div>
+          <span className="text-xs font-mono px-2 py-1 rounded-full"
+            style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.65)" }}>
+            {elapsed}s
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
+          {SCENARIOS.map((s, i) => {
+            const state = scenarioState(i)
+            return (
+              <div key={s.name} className="rounded-xl px-3 py-2"
+                style={{
+                  background: state.active ? "rgba(168,85,247,0.12)" : state.done ? "rgba(212,175,55,0.08)" : "rgba(255,255,255,0.04)",
+                  border: state.active ? "1px solid rgba(168,85,247,0.45)" : state.done ? "1px solid rgba(212,175,55,0.24)" : "1px solid rgba(255,255,255,0.06)",
+                }}>
+                <p className="text-sm font-medium" style={{ color: "#f5f0ff" }}>{s.name}</p>
+                <p className="text-xs mt-1" style={{ color: state.active ? "#c084fc" : state.done ? "#d4af37" : "rgba(255,255,255,0.48)" }}>
+                  {state.label}
+                </p>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="space-y-2">
+          {phases.map((p, i) => (
+            <div key={p} className="flex items-center gap-3">
+              <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
+                style={{
+                  background: i < phase ? "rgba(212,175,55,0.28)" : i === phase ? "rgba(168,85,247,0.28)" : "rgba(255,255,255,0.05)",
+                  border: i === phase ? "1px solid rgba(168,85,247,0.65)" : "1px solid rgba(255,255,255,0.06)",
+                  color: i <= phase ? "#fff" : "rgba(255,255,255,0.35)",
+                }}>
+                {i < phase ? "✓" : i === phase ? "•" : ""}
+              </div>
+              <span className="text-sm" style={{ color: i <= phase ? "rgba(255,255,255,0.88)" : "rgba(255,255,255,0.42)" }}>
+                {p}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function Particles() {
   const pts = Array.from({ length: 18 }, (_, i) => ({
     id: i, size: Math.random() * 4 + 2,
@@ -206,6 +294,7 @@ export default function Home() {
   return (
     <div className="relative min-h-screen">
       <Particles />
+      {loading && <LaunchOverlay />}
 
       {picker && (
         <PersonaPicker

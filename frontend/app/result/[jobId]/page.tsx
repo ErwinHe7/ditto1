@@ -79,6 +79,52 @@ function JudgeCard({ js }: { js: JudgeScore }) {
   )
 }
 
+function CurrentMatchCard({ partnerName, score }: { partnerName: string; score: number }) {
+  return (
+    <div className="flex items-start gap-3 mb-3 p-3 rounded-xl"
+      style={{ background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.24)" }}>
+      <span className="text-lg font-bold font-mono mt-0.5" style={{ color: "#d4af37" }}>Now</span>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-sm font-semibold" style={{ color: "#ffffff" }}>{partnerName}</p>
+          <span className="text-xs font-mono px-2 py-0.5 rounded"
+            style={{ background: "rgba(212,175,55,0.18)", color: "#d4af37" }}>
+            full simulation {score}/100
+          </span>
+        </div>
+        <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.62)" }}>
+          This is the pair you just ran through all scenario transcripts and both judges.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function CandidateLeadCard({ match, index }: { match: BestMatch; index: number }) {
+  return (
+    <div className="flex items-start gap-3 mb-2 p-3 rounded-xl"
+      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(168,85,247,0.15)" }}>
+      <span className="text-lg font-bold font-mono mt-0.5" style={{ color: index === 0 ? "#d4af37" : "#a855f7" }}>
+        #{index + 1}
+      </span>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-sm font-semibold" style={{ color: "#ffffff" }}>{match.name}</p>
+          <span className="text-xs px-2 py-0.5 rounded"
+            style={{ background: "rgba(168,85,247,0.16)", color: "#c084fc" }}>
+            profile-fit lead
+          </span>
+          {match.tag && <span className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{match.tag}</span>}
+        </div>
+        <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.65)" }}>{match.bio}</p>
+        <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.42)" }}>
+          Not yet simulated. Run this pair to get a comparable compatibility score.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 function ScenarioCard({ sr, paName, pbName }: { sr: ScenarioResult; paName: string; pbName: string }) {
   const [open, setOpen] = useState(false)
   const [simIdx, setSimIdx] = useState(0)
@@ -405,42 +451,28 @@ export default function ResultPage() {
           </p>
         </div>
 
-        {/* Best-match recommendations — built into the report */}
+        {/* Candidate recommendations */}
         {(report.pa_best_matches?.length > 0 || report.pb_best_matches?.length > 0) && (
           <div className="rounded-2xl p-6 mt-6 mb-2" style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.2)" }}>
             <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "#a855f7" }}>
-              ✦ Best Matches From the Candidate Pool
+              Current Match + Other Candidate Leads
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {([
-                { name: pa.name, best: report.pa_best_matches },
-                { name: pb.name, best: report.pb_best_matches },
-              ] as { name: string; best: BestMatch[] }[]).map(({ name, best }) => (
+                { name: pa.name, partner: pb.name, best: report.pa_best_matches },
+                { name: pb.name, partner: pa.name, best: report.pb_best_matches },
+              ] as { name: string; partner: string; best: BestMatch[] }[]).map(({ name, partner, best }) => (
                 <div key={name}>
-                  <p className="text-xs font-semibold mb-3" style={{ color: "#d4af37" }}>Best match for {name}:</p>
-                  {best.length === 0
-                    ? <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>No other profiles to compare</p>
-                    : best.map((m, i) => (
-                      <div key={i} className="flex items-start gap-3 mb-2 p-3 rounded-xl"
-                        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(168,85,247,0.15)" }}>
-                        <span className="text-lg font-bold font-mono mt-0.5" style={{ color: i === 0 ? "#d4af37" : "#a855f7" }}>
-                          #{i + 1}
-                        </span>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-semibold" style={{ color: "#ffffff" }}>{m.name}</p>
-                            <span className="text-xs font-mono px-2 py-0.5 rounded"
-                              style={{ background: i === 0 ? "rgba(212,175,55,0.2)" : "rgba(168,85,247,0.2)",
-                                       color: i === 0 ? "#d4af37" : "#c084fc" }}>
-                              {m.score}/100
-                            </span>
-                            {m.tag && <span className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{m.tag}</span>}
-                          </div>
-                          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.65)" }}>{m.bio}</p>
-                        </div>
-                      </div>
-                    ))
-                  }
+                  <p className="text-xs font-semibold mb-3" style={{ color: "#d4af37" }}>For {name}:</p>
+                  <CurrentMatchCard partnerName={partner} score={report.overall_score} />
+                  <p className="text-xs font-semibold mb-2 mt-4" style={{ color: "rgba(255,255,255,0.62)" }}>
+                    Other leads from the pool:
+                  </p>
+                  {best.length === 0 ? (
+                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>No other profiles to compare</p>
+                  ) : (
+                    best.map((m, i) => <CandidateLeadCard key={`${name}-${m.name}-${i}`} match={m} index={i} />)
+                  )}
                 </div>
               ))}
             </div>
