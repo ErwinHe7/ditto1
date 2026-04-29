@@ -1,4 +1,4 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+const BASE = process.env.NEXT_PUBLIC_API_URL || "https://backend-mocha-beta-95.vercel.app"
 
 export interface Profile {
   name: string
