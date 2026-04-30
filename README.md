@@ -50,7 +50,8 @@ Production implementation:
 Prototype implementation:
 - `backend/app/pipeline/l3_deep.py`
 - Full manual simulation runs 4 scenarios x 7 loops.
-- The result page exposes transcripts, judge verdicts, scenario scores, candidate leads, and interest-lift suggestions.
+- The `Find Top 3 Matches` flow deep-simulates the strongest L2 finalists before anything is labeled a Top Match. In production this cap should be 10; the Vercel demo defaults to 3 to keep a single request usable.
+- The result page exposes transcripts, judge verdicts, scenario scores, candidate leads, behavior-impact deltas, iMessage-style chat logs, and interest-lift suggestions.
 
 ## Why This Architecture Matters
 
@@ -64,8 +65,10 @@ This is how Ditto can feel agentic to users without becoming economically imposs
 
 ## Current Demo Flow
 
-1. Choose or custom-fill Person A.
-2. Click `Find Top 3 With Auto-Date`.
-3. Ditto runs L1 + L2 and returns three candidate matches with scores and behavior tips.
-4. Pick a candidate or click `Simulate`.
-5. L3 runs 4 scenarios x 7 loops, then returns the compatibility report.
+1. Upload or paste your dating profile.
+2. Choose `Looking for` and `Relationship intent` filters.
+3. Optionally add a custom candidate to the candidate pool.
+4. Click `Find Top 3 Matches`.
+5. Ditto shows a live L1/L2/L3 agent run while it screens, quick-dates, then deep-dates finalists.
+6. The Top 3 page shows only fully simulated matches, with 100-point scores, why-match breakdowns, long-term risk, next-chat suggestions, and an iMessage-style share card.
+7. Opening a full report shows every scenario loop as an iMessage-style transcript plus behavior-impact deltas such as interest gains or drops.

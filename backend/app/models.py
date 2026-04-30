@@ -11,6 +11,8 @@ class Profile(BaseModel):
     values: list[str]
     deal_breakers: list[str] = []
     looking_for: str
+    relationship_intent: str = "unsure"
+    chat_history: str = ""
 
 class JudgeScore(BaseModel):
     judge_id: str
@@ -22,6 +24,21 @@ class JudgeScore(BaseModel):
     overall: int
     reasoning: str
 
+class BehaviorImpact(BaseModel):
+    loop_index: int
+    target: str
+    delta: int
+    reason: str
+
+class MatchBreakdown(BaseModel):
+    chemistry: int
+    values_alignment: int
+    emotional_safety: int
+    conflict_handling: int
+    long_term_risk: str
+    score_increased: list[str] = []
+    score_lowered: list[str] = []
+
 class ScenarioResult(BaseModel):
     scenario_id: str
     scenario_name: str
@@ -29,6 +46,7 @@ class ScenarioResult(BaseModel):
     judge_scores: list[JudgeScore]
     avg_score: float = 0.0
     trimmed_avg_score: float = 0.0
+    behavior_impacts: list[BehaviorImpact] = []
 
 class BestMatch(BaseModel):
     name: str
@@ -52,6 +70,8 @@ class CompatibilityReport(BaseModel):
     confidence: float
     recommendation: Literal["strong_match", "promising", "uncertain", "skip"]
     summary: str
+    breakdown: MatchBreakdown | None = None
+    next_chat_suggestions: list[str] = []
     affection_score: int = 0
     affection_tips: list[str] = []
     pa_best_matches: list[BestMatch] = []

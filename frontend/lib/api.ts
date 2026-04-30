@@ -10,6 +10,8 @@ export interface Profile {
   values: string[]
   deal_breakers: string[]
   looking_for: string
+  relationship_intent?: string
+  chat_history?: string
 }
 
 export interface JudgeScore {
@@ -23,6 +25,23 @@ export interface JudgeScore {
   reasoning: string
 }
 
+export interface BehaviorImpact {
+  loop_index: number
+  target: string
+  delta: number
+  reason: string
+}
+
+export interface MatchBreakdown {
+  chemistry: number
+  values_alignment: number
+  emotional_safety: number
+  conflict_handling: number
+  long_term_risk: string
+  score_increased: string[]
+  score_lowered: string[]
+}
+
 export interface ScenarioResult {
   scenario_id: string
   scenario_name: string
@@ -30,6 +49,7 @@ export interface ScenarioResult {
   judge_scores: JudgeScore[]
   avg_score: number
   trimmed_avg_score: number
+  behavior_impacts?: BehaviorImpact[]
 }
 
 export interface CompatibilityReport {
@@ -41,17 +61,34 @@ export interface CompatibilityReport {
   confidence: number
   recommendation: "strong_match" | "promising" | "uncertain" | "skip"
   summary: string
+  breakdown?: MatchBreakdown
+  next_chat_suggestions?: string[]
   affection_score?: number
   affection_tips?: string[]
   pa_best_matches: BestMatch[]
   pb_best_matches: BestMatch[]
 }
 
+export interface TopMatchesReport {
+  kind: "top_matches"
+  target: Profile
+  pipeline: {
+    candidate_pool: number
+    l1_target: number
+    l2_target: number
+    l3_full_dates: number
+    scenarios: number
+    loops_per_scenario: number
+  }
+  reports: CompatibilityReport[]
+}
+
 export interface MatchStatus {
   job_id: string
   status: "pending" | "running" | "done" | "error" | "not_found"
   progress: string
-  report?: CompatibilityReport | { pa_best: BestMatch[]; pb_best: BestMatch[] }
+  report?: CompatibilityReport | TopMatchesReport | { pa_best: BestMatch[]; pb_best: BestMatch[] }
+  reports?: CompatibilityReport[]
   error_detail?: string
 }
 
@@ -98,15 +135,45 @@ export async function getSampleProfiles(): Promise<Profile[]> {
   } catch { return [] }
 }
 
-export async function scoutMatches(profile: Profile, topN = 3): Promise<ScoutMatch[]> {
+export interface ScoutOptions {
+  topN?: number
+  lookingForGender?: string
+  relationshipIntent?: string
+  customCandidate?: Profile | null
+}
+
+export async function scoutMatches(profile: Profile, options: ScoutOptions | number = 3): Promise<ScoutMatch[]> {
+  const opts = typeof options === "number" ? { topN: options } : options
   const r = await fetch(`${BASE}/scout`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ profile, top_n: topN }),
+    body: JSON.stringify({
+      profile,
+      top_n: opts.topN ?? 3,
+      looking_for_gender: opts.lookingForGender ?? "opposite",
+      relationship_intent: opts.relationshipIntent ?? "any",
+      custom_candidate: opts.customCandidate ?? null,
+    }),
   })
   if (!r.ok) throw new Error(await r.text())
   const data = await r.json()
   return data.matches || []
+}
+
+export async function findTopMatches(profile: Profile, options: ScoutOptions = {}): Promise<{ job_id: string; report?: TopMatchesReport; reports?: CompatibilityReport[]; status: string; progress: string; error_detail?: string }> {
+  const r = await fetch(`${BASE}/match/top`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      profile,
+      top_n: options.topN ?? 3,
+      looking_for_gender: options.lookingForGender ?? "opposite",
+      relationship_intent: options.relationshipIntent ?? "any",
+      custom_candidate: options.customCandidate ?? null,
+    }),
+  })
+  if (!r.ok) throw new Error(await r.text())
+  return r.json()
 }
 
 export async function startBestMatches(pa: Profile, pb: Profile, allProfiles: Profile[]): Promise<{ job_id: string }> {

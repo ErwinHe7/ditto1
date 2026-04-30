@@ -480,6 +480,7 @@ async def find_top_matches_via_simulation(
     candidates: list[Profile],
     top_n: int = 3,
     on_progress=None,
+    l1_target: Profile | None = None,
 ) -> list[CompatibilityReport]:
     """
     Tiered auto-matching: L1 coarse -> L2 light sim -> L3 deep sim.
@@ -499,16 +500,22 @@ async def find_top_matches_via_simulation(
 
     if on_progress:
         on_progress(f"L1 coarse scan over {len(pool)} candidates...")
-    l1_pool = await l1_coarse_filter(target, pool, top_k=100)
+    l1_pool = await l1_coarse_filter(l1_target or target, pool, top_k=100)
 
     if on_progress:
         on_progress(f"L2 light simulation across {len(l1_pool)} candidates...")
     l2_pool = await l2_medium_filter(target, l1_pool, top_k=10)
 
+    # The production architecture can deep-rank the full L2 top 10. The Vercel
+    # demo keeps the same funnel but caps expensive L3 runs so the button
+    # remains usable inside a single serverless request.
+    l3_cap = max(top_n, int(os.getenv("L3_AUTO_MATCH_CANDIDATES", str(top_n))))
+    l3_pool = l2_pool[:min(len(l2_pool), l3_cap)]
+
     reports: list[CompatibilityReport] = []
-    for i, candidate in enumerate(l2_pool):
+    for i, candidate in enumerate(l3_pool):
         if on_progress:
-            on_progress(f"L3 deep date {i+1}/{len(l2_pool)}: {target.name} x {candidate.name}")
+            on_progress(f"L3 deep date {i+1}/{len(l3_pool)}: {target.name} x {candidate.name}")
         try:
             report = await run_l3_deep_match(target, candidate, on_progress=None)
             reports.append(report)

@@ -166,11 +166,184 @@ function AffectionPanel({ score, tips }: { score?: number; tips?: string[] }) {
   )
 }
 
+function BreakdownPanel({ report }: { report: CompatibilityReport }) {
+  const breakdown = report.breakdown
+  if (!breakdown) return null
+  const metrics = [
+    ["Chemistry", breakdown.chemistry],
+    ["Values alignment", breakdown.values_alignment],
+    ["Emotional safety", breakdown.emotional_safety],
+    ["Conflict handling", breakdown.conflict_handling],
+  ] as const
+  return (
+    <div className="rounded-2xl p-6 mb-6" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(168,85,247,0.16)" }}>
+      <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "#a855f7" }}>
+        Why this match
+      </p>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-5">
+        <div className="space-y-3">
+          {metrics.map(([label, value]) => (
+            <div key={label}>
+              <div className="flex justify-between text-xs mb-1" style={{ color: "rgba(255,255,255,0.72)" }}>
+                <span>{label}</span>
+                <span className="font-mono" style={{ color: "#d4af37" }}>{value}/100</span>
+              </div>
+              <div className="h-2 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <div className="h-full rounded-full" style={{ width: `${value}%`, background: "linear-gradient(90deg,#d4af37,#a855f7)" }} />
+              </div>
+            </div>
+          ))}
+          <div className="rounded-xl p-3" style={{ background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.15)" }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "#d4af37" }}>Long-term risk</p>
+            <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.74)" }}>{breakdown.long_term_risk}</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#22c55e" }}>What increased score</p>
+            <div className="space-y-2">
+              {breakdown.score_increased.map((item, i) => (
+                <p key={i} className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.74)" }}>+ {item}</p>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#f59e0b" }}>What lowered score</p>
+            <div className="space-y-2">
+              {breakdown.score_lowered.map((item, i) => (
+                <p key={i} className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.74)" }}>- {item}</p>
+              ))}
+            </div>
+          </div>
+          {!!report.next_chat_suggestions?.length && (
+            <div className="rounded-xl p-3 md:col-span-2" style={{ background: "rgba(168,85,247,0.07)", border: "1px solid rgba(168,85,247,0.18)" }}>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#c084fc" }}>Next chat moves</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {report.next_chat_suggestions.slice(0, 4).map((item, i) => (
+                  <p key={i} className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.74)" }}>{i + 1}. {item}</p>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ResultShareCard({ report }: { report: CompatibilityReport }) {
+  const [copied, setCopied] = useState(false)
+  const pa = report.profile_a
+  const pb = report.profile_b
+  const shareText = `${pa.name} x ${pb.name}: ${report.overall_score}/100 on Ditto Simulator. ${report.breakdown?.long_term_risk || report.summary}`
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareText)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1600)
+    } catch {
+      setCopied(false)
+    }
+  }
+  return (
+    <div className="rounded-2xl p-5 mb-6" style={{ background: "rgba(10,132,255,0.055)", border: "1px solid rgba(10,132,255,0.18)" }}>
+      <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "#60a5fa" }}>
+        iMessage share card
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-4 items-center">
+        <div className="rounded-[28px] overflow-hidden" style={{ background: "#05060a", border: "1px solid rgba(255,255,255,0.14)" }}>
+          <div className="px-4 py-3 text-center" style={{ background: "#1c1c1e", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            <p className="text-xs font-semibold" style={{ color: "#f5f5f7" }}>Messages</p>
+            <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.45)" }}>Ditto compatibility card</p>
+          </div>
+          <div className="p-4" style={{ background: "linear-gradient(180deg,#0b0b10,#111117)" }}>
+            <div className="ml-auto max-w-[86%] rounded-[22px] p-4"
+              style={{ background: "linear-gradient(180deg,#34aadc,#007aff)", color: "#fff", borderBottomRightRadius: 6 }}>
+              <p className="text-lg font-bold">{pa.name} x {pb.name}</p>
+              <p className="text-3xl font-bold font-mono mt-2">{report.overall_score}/100</p>
+              <p className="text-xs mt-3 leading-relaxed opacity-85">{report.breakdown?.long_term_risk || report.summary}</p>
+            </div>
+          </div>
+        </div>
+        <button onClick={copy} className="rounded-xl px-4 py-3 text-sm"
+          style={{ background: copied ? "rgba(34,197,94,0.14)" : "rgba(10,132,255,0.14)", color: copied ? "#22c55e" : "#93c5fd", border: copied ? "1px solid rgba(34,197,94,0.3)" : "1px solid rgba(10,132,255,0.3)" }}>
+          {copied ? "Copied" : "Copy card text"}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function IMessageTranscript({ transcript, paName, pbName, scenarioName }: {
+  transcript: Array<{ speaker: string; text: string }>
+  paName: string
+  pbName: string
+  scenarioName: string
+}) {
+  return (
+    <div className="overflow-hidden" style={{ borderRadius: 28, background: "#05060a", border: "1px solid rgba(255,255,255,0.14)", boxShadow: "0 18px 50px rgba(0,0,0,0.28)" }}>
+      <div className="px-4 py-3 flex items-center justify-between gap-3" style={{ background: "#1c1c1e", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <span className="text-xs" style={{ color: "#0a84ff" }}>Messages</span>
+        <div className="text-center min-w-0">
+          <p className="text-xs font-semibold truncate max-w-[190px]" style={{ color: "#f5f5f7" }}>{paName} x {pbName}</p>
+          <p className="text-[10px] truncate max-w-[190px]" style={{ color: "rgba(255,255,255,0.45)" }}>{scenarioName}</p>
+        </div>
+        <span className="text-xs" style={{ color: "#0a84ff" }}>Details</span>
+      </div>
+      <div className="space-y-2 max-h-[430px] overflow-y-auto px-3 py-4" style={{ background: "linear-gradient(180deg,#0b0b10,#111117)", scrollbarWidth: "thin" }}>
+        {transcript.map((m, i) => {
+          const isA = m.speaker === "A"
+          return (
+            <div key={i} className={`flex ${isA ? "justify-start" : "justify-end"}`}>
+              <div className="max-w-[84%]">
+                <p className={`text-[10px] mb-1 ${isA ? "text-left" : "text-right"}`} style={{ color: "rgba(255,255,255,0.42)" }}>
+                  {isA ? paName : pbName}
+                </p>
+                <div className="px-3 py-2.5 text-sm"
+                  style={{
+                    background: isA ? "#2c2c2e" : "linear-gradient(180deg,#34aadc,#007aff)",
+                    color: "#fff",
+                    borderRadius: isA ? "19px 19px 19px 5px" : "19px 19px 5px 19px",
+                    overflowWrap: "anywhere",
+                  }}>
+                  <p className="whitespace-pre-wrap leading-relaxed">{m.text}</p>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <div className="p-3" style={{ background: "#0b0b10", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-full px-4 py-2 text-sm" style={{ background: "#1c1c1e", color: "rgba(255,255,255,0.36)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          iMessage
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function BehaviorImpactCard({ impact }: { impact?: { target: string; delta: number; reason: string } }) {
+  if (!impact) return null
+  const positive = impact.delta >= 0
+  return (
+    <div className="rounded-xl p-3 mb-3"
+      style={{ background: positive ? "rgba(34,197,94,0.08)" : "rgba(245,158,11,0.08)", border: positive ? "1px solid rgba(34,197,94,0.18)" : "1px solid rgba(245,158,11,0.18)" }}>
+      <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: positive ? "#22c55e" : "#f59e0b" }}>
+        Behavior impact
+      </p>
+      <p className="text-sm" style={{ color: "rgba(255,255,255,0.82)" }}>
+        {impact.target} interest {positive ? "+" : ""}{impact.delta}: <span style={{ color: "rgba(255,255,255,0.68)" }}>{impact.reason}</span>
+      </p>
+    </div>
+  )
+}
+
 function ScenarioCard({ sr, paName, pbName }: { sr: ScenarioResult; paName: string; pbName: string }) {
   const [open, setOpen] = useState(false)
   const [simIdx, setSimIdx] = useState(0)
   const transcript = sr.transcripts[simIdx] || []
   const judgesForSim = sr.judge_scores.slice(simIdx * JUDGES_PER_SIM, simIdx * JUDGES_PER_SIM + JUDGES_PER_SIM)
+  const behaviorImpact = sr.behavior_impacts?.[simIdx]
   const icon = SCENARIO_ICONS[sr.scenario_id] || "🎭"
 
   const exportLog = () => {
@@ -241,26 +414,8 @@ function ScenarioCard({ sr, paName, pbName }: { sr: ScenarioResult; paName: stri
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* Conversation */}
             <div>
-              <p className="text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: "rgba(212,175,55,0.6)" }}>Conversation</p>
-              <div className="space-y-2 max-h-80 overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-                {transcript.map((m, i) => {
-                  const isA = m.speaker === "A"
-                  return (
-                    <div key={i} className={`flex ${isA ? "justify-start" : "justify-end"}`}>
-                      <div className="max-w-[85%] rounded-2xl px-4 py-2.5 text-sm"
-                        style={isA
-                          ? { background: "rgba(255,255,255,0.06)", color: "#ffffff", borderBottomLeftRadius: 4 }
-                          : { background: "rgba(168,85,247,0.2)", color: "#f5f0ff", borderBottomRightRadius: 4, border: "1px solid rgba(168,85,247,0.2)" }
-                        }>
-                        <p className="text-xs font-semibold mb-1" style={{ opacity: 0.5 }}>
-                          {isA ? paName : pbName}
-                        </p>
-                        <p className="whitespace-pre-wrap leading-relaxed">{m.text}</p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+              <BehaviorImpactCard impact={behaviorImpact} />
+              <IMessageTranscript transcript={transcript} paName={paName} pbName={pbName} scenarioName={sr.scenario_name} />
             </div>
 
             {/* Judges */}
@@ -355,6 +510,10 @@ export default function ResultPage() {
       setStatus(data.status)
       setProgress(data.progress)
       if (data.report) {
+        if ((data.report as { kind?: string }).kind === "top_matches") {
+          router.replace(`/top/${jobId}`)
+          return
+        }
         setReport(data.report as CompatibilityReport)
         if (intervalRef.current) clearInterval(intervalRef.current)
       }
@@ -368,7 +527,7 @@ export default function ResultPage() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [jobId])
+  }, [jobId, router])
 
   if (status === "error") {
     return (
@@ -468,6 +627,8 @@ export default function ResultPage() {
         </div>
 
         <AffectionPanel score={report.affection_score} tips={report.affection_tips} />
+        <BreakdownPanel report={report} />
+        <ResultShareCard report={report} />
 
         {/* Scenario breakdown bar chart */}
         <div className="rounded-2xl p-6 mb-6" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(212,175,55,0.1)" }}>
