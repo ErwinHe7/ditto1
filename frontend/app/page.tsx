@@ -499,12 +499,6 @@ export default function Home() {
     })
   }, [])
 
-  useEffect(() => {
-    const g = pa.gender.toLowerCase()
-    if (g === "female" && lookingForGender === "women") setLookingForGender("men")
-    if (g === "male" && lookingForGender === "men") setLookingForGender("women")
-  }, [pa.gender, lookingForGender])
-
   const overlayCandidates = useMemo(() => {
     const preferred = lookingForGender === "men"
       ? samples.filter(p => p.gender.toLowerCase() === "male")
@@ -635,6 +629,20 @@ export default function Home() {
           </p>
         </div>
 
+        <div className="mb-5 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(212,175,55,0.1)" }}>
+          <p className="text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: "rgba(212,175,55,0.62)" }}>
+            4 Simulation Scenarios
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {SCENARIOS.map((s, i) => (
+              <div key={i} className="rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <p className="text-sm font-medium" style={{ color: "#f5f0ff" }}>{s.name}</p>
+                <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="mb-6 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(212,175,55,0.1)" }}>
           <p className="text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: "rgba(212,175,55,0.62)" }}>
             Production-style matching pipeline
@@ -681,7 +689,7 @@ export default function Home() {
             onPickTemplate={() => setPicker("a")} allowUpload />
           <div>
             <ProfileForm label="Custom Candidate" value={pb} onChange={setPb} accent="purple"
-              onPickTemplate={() => setPicker("b")} />
+              onPickTemplate={() => setPicker("b")} allowUpload />
             <label className="mt-3 flex items-center gap-2 text-xs rounded-xl px-3 py-2"
               style={{ background: "rgba(255,255,255,0.035)", color: "rgba(255,255,255,0.72)", border: "1px solid rgba(255,255,255,0.08)" }}>
               <input type="checkbox" checked={includeCustomCandidate} onChange={e => setIncludeCustomCandidate(e.target.checked)} />
@@ -716,14 +724,6 @@ export default function Home() {
           Only L3-simulated candidates are labeled Top Matches. L1/L2 results stay as candidate leads.
         </p>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-6">
-          {SCENARIOS.map((s, i) => (
-            <div key={i} className="rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <p className="text-sm font-medium" style={{ color: "#f5f0ff" }}>{s.name}</p>
-              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>{s.desc}</p>
-            </div>
-          ))}
-        </div>
       </div>
 
       <style>{`
