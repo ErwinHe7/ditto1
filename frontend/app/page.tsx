@@ -360,9 +360,11 @@ function ProfileForm({ label, value, onChange, accent, onPickTemplate, allowUplo
       </div>
 
       <div>
-        <label className="label">Bio <span className="text-dim">(or paste profile text)</span></label>
+        <label className="label">
+          Bio {allowUpload ? <span className="text-dim">(or paste profile text)</span> : <span className="text-dim">(public profile snippet)</span>}
+        </label>
         <textarea className="inp" style={{ height: 78, resize: "vertical" }}
-          placeholder="Who are you? What drives you? What kind of relationship are you looking for?"
+          placeholder={allowUpload ? "Who are you? What drives you? What kind of relationship are you looking for?" : "What does this candidate's profile say? Keep it to the observable public details."}
           value={value.bio} onChange={e => set("bio", e.target.value)} />
       </div>
 
@@ -643,26 +645,6 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="mb-6 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(212,175,55,0.1)" }}>
-          <p className="text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: "rgba(212,175,55,0.62)" }}>
-            Production-style matching pipeline
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.03)" }}>
-              <p className="text-sm font-semibold" style={{ color: "#f5f0ff" }}>L1 Coarse Filter</p>
-              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>Embedding-style similarity and rules: pool to 100.</p>
-            </div>
-            <div className="rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.03)" }}>
-              <p className="text-sm font-semibold" style={{ color: "#f5f0ff" }}>L2 Quick Dates</p>
-              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>One light scenario, three short loops each: 100 to 10.</p>
-            </div>
-            <div className="rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.03)" }}>
-              <p className="text-sm font-semibold" style={{ color: "#f5f0ff" }}>L3 Full Virtual Dates</p>
-              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>4 scenarios x 7 loops, GPT + Claude judges, final Top 3.</p>
-            </div>
-          </div>
-        </div>
-
         <div className="rounded-2xl p-5 mb-5" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(168,85,247,0.16)" }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -689,7 +671,7 @@ export default function Home() {
             onPickTemplate={() => setPicker("a")} allowUpload />
           <div>
             <ProfileForm label="Custom Candidate" value={pb} onChange={setPb} accent="purple"
-              onPickTemplate={() => setPicker("b")} allowUpload />
+              onPickTemplate={() => setPicker("b")} />
             <label className="mt-3 flex items-center gap-2 text-xs rounded-xl px-3 py-2"
               style={{ background: "rgba(255,255,255,0.035)", color: "rgba(255,255,255,0.72)", border: "1px solid rgba(255,255,255,0.08)" }}>
               <input type="checkbox" checked={includeCustomCandidate} onChange={e => setIncludeCustomCandidate(e.target.checked)} />
@@ -723,6 +705,26 @@ export default function Home() {
         <p className="text-center text-xs mt-3" style={{ color: "rgba(255,255,255,0.55)" }}>
           Only L3-simulated candidates are labeled Top Matches. L1/L2 results stay as candidate leads.
         </p>
+
+        <div className="mt-8 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(212,175,55,0.1)" }}>
+          <p className="text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: "rgba(212,175,55,0.62)" }}>
+            Production-style matching pipeline
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.03)" }}>
+              <p className="text-sm font-semibold" style={{ color: "#f5f0ff" }}>L1 Coarse Filter</p>
+              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>Embedding-style similarity and rules: pool to 100.</p>
+            </div>
+            <div className="rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.03)" }}>
+              <p className="text-sm font-semibold" style={{ color: "#f5f0ff" }}>L2 Quick Dates</p>
+              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>One light scenario, three short loops each: 100 to 10.</p>
+            </div>
+            <div className="rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.03)" }}>
+              <p className="text-sm font-semibold" style={{ color: "#f5f0ff" }}>L3 Full Virtual Dates</p>
+              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>4 scenarios x 7 loops, GPT + Claude judges, final Top 3.</p>
+            </div>
+          </div>
+        </div>
 
       </div>
 
