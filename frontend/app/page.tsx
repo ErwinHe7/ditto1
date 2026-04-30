@@ -12,10 +12,10 @@ import {
 } from "@/lib/api"
 
 const SCENARIOS = [
-  { name: "First coffee date", desc: "First IRL meeting. Awkward, curious, real." },
-  { name: "3am vulnerable conversation", desc: "Late-night texting where one person opens up." },
-  { name: "Disagreement on values", desc: "A casual chat turns into a real values clash." },
-  { name: "One person is having a hard day", desc: "Support, attunement, and repair under stress." },
+  { icon: "☕", signal: "First-impression chemistry", name: "First coffee date", desc: "First IRL meeting. Awkward, curious, real." },
+  { icon: "🌙", signal: "Emotional safety", name: "3am vulnerable conversation", desc: "Late-night texting where one person opens up." },
+  { icon: "⚡", signal: "Conflict style", name: "Disagreement on values", desc: "A casual chat turns into a real values clash." },
+  { icon: "🤝", signal: "Care under stress", name: "One person is having a hard day", desc: "Support, attunement, and repair under stress." },
 ]
 
 const PERSONA_TAGS: Record<string, string> = {
@@ -328,7 +328,7 @@ function ProfileForm({ label, value, onChange, accent, onPickTemplate, allowUplo
       {allowUpload && (
         <label className="text-xs rounded-xl px-3 py-2 cursor-pointer text-center"
           style={{ background: `${color}10`, color, border: `1px solid ${color}30` }}>
-          Upload or paste dating profile
+          Upload dating bio or prompt answers
           <input type="file" accept=".txt,.md,.json" className="hidden" onChange={e => readFile(e.target.files?.[0])} />
         </label>
       )}
@@ -418,9 +418,8 @@ function FilterButton({ active, label, onClick }: { active: boolean; label: stri
   )
 }
 
-function ScoutResults({ matches, onUse, onRun }: {
+function ScoutResults({ matches, onRun }: {
   matches: ScoutMatch[]
-  onUse: (profile: Profile) => void
   onRun: (profile: Profile) => void
 }) {
   if (!matches.length) return null
@@ -458,14 +457,10 @@ function ScoutResults({ matches, onUse, onRun }: {
                 </p>
               ))}
             </div>
-            <div className="flex gap-2 mt-auto">
-              <button onClick={() => onUse(cleanProfile(m.profile))} className="flex-1 text-xs py-2 rounded-lg"
-                style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.78)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                Use as custom
-              </button>
-              <button onClick={() => onRun(cleanProfile(m.profile))} className="flex-1 text-xs py-2 rounded-lg"
+            <div className="mt-auto">
+              <button onClick={() => onRun(cleanProfile(m.profile))} className="w-full text-xs py-2 rounded-lg"
                 style={{ background: "rgba(212,175,55,0.16)", color: "#d4af37", border: "1px solid rgba(212,175,55,0.32)" }}>
-                Full date
+                Run full L3 date
               </button>
             </div>
           </div>
@@ -478,10 +473,9 @@ function ScoutResults({ matches, onUse, onRun }: {
 export default function Home() {
   const router = useRouter()
   const [pa, setPa] = useState<Profile>(EMPTY)
-  const [pb, setPb] = useState<Profile>({ ...EMPTY, gender: "male", relationship_intent: "serious" })
+  const [activePairCandidate, setActivePairCandidate] = useState<Profile | null>(null)
   const [lookingForGender, setLookingForGender] = useState("men")
   const [relationshipIntent, setRelationshipIntent] = useState("serious")
-  const [includeCustomCandidate, setIncludeCustomCandidate] = useState(true)
   const [loadingPair, setLoadingPair] = useState(false)
   const [loadingTop, setLoadingTop] = useState(false)
   const [scouting, setScouting] = useState(false)
@@ -495,9 +489,7 @@ export default function Home() {
       const cleaned = s.map(cleanProfile)
       setSamples(cleaned)
       const female = cleaned.find(p => p.gender.toLowerCase() === "female")
-      const male = cleaned.find(p => p.gender.toLowerCase() === "male")
       if (female) setPa(female)
-      if (male) setPb(male)
     })
   }, [])
 
@@ -510,8 +502,6 @@ export default function Home() {
     return preferred.slice(0, 10)
   }, [lookingForGender, samples])
 
-  const customCandidate = includeCustomCandidate && pb.name && pb.bio ? cleanProfile(pb) : null
-
   const runMatchWith = async (partner: Profile) => {
     if (!pa.name || !partner.name || !pa.bio || !partner.bio) {
       setErr("Fill in at least Name and Bio for both people.")
@@ -519,7 +509,7 @@ export default function Home() {
     }
     setErr("")
     setLoadingPair(true)
-    setPb(partner)
+    setActivePairCandidate(partner)
     try {
       const data = await startMatch(cleanProfile(pa), cleanProfile(partner))
       if (data.status === "error") {
@@ -550,7 +540,6 @@ export default function Home() {
         topN: 3,
         lookingForGender,
         relationshipIntent,
-        customCandidate,
       })
       if (data.status === "error") {
         throw new Error(data.error_detail || data.progress || "Top 3 search failed")
@@ -590,10 +579,8 @@ export default function Home() {
         topN: 3,
         lookingForGender,
         relationshipIntent,
-        customCandidate,
       })
       setScoutResults(matches)
-      if (matches[0]?.profile) setPb(cleanProfile(matches[0].profile))
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
@@ -604,15 +591,15 @@ export default function Home() {
   return (
     <div className="relative min-h-screen">
       {loadingTop && <AgentRunOverlay mode="top3" targetName={pa.name} candidates={overlayCandidates} />}
-      {loadingPair && <AgentRunOverlay mode="pair" targetName={pa.name} candidates={[pb]} />}
+      {loadingPair && activePairCandidate && <AgentRunOverlay mode="pair" targetName={pa.name} candidates={[activePairCandidate]} />}
 
       {picker && (
         <PersonaPicker
           samples={samples}
-          accent={picker === "a" ? "gold" : "purple"}
-          onSelect={p => picker === "a" ? setPa(p) : setPb(p)}
+          accent="gold"
+          onSelect={p => setPa(p)}
           onClose={() => setPicker(null)}
-          expectedGender={picker === "a" ? "female" : "male"}
+          expectedGender="female"
         />
       )}
 
@@ -637,9 +624,18 @@ export default function Home() {
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {SCENARIOS.map((s, i) => (
-              <div key={i} className="rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                <p className="text-sm font-medium" style={{ color: "#f5f0ff" }}>{s.name}</p>
-                <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>{s.desc}</p>
+              <div key={i} className="rounded-xl px-3 py-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg"
+                    style={{ background: i % 2 === 0 ? "rgba(212,175,55,0.14)" : "rgba(168,85,247,0.14)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    {s.icon}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium" style={{ color: "#f5f0ff" }}>{s.name}</p>
+                    <p className="text-[10px] uppercase tracking-wider mt-1" style={{ color: i % 2 === 0 ? "#d4af37" : "#c084fc" }}>{s.signal}</p>
+                    <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.6)" }}>{s.desc}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -669,20 +665,30 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-4 mb-5">
           <ProfileForm label="Your Profile" value={pa} onChange={setPa} accent="gold"
             onPickTemplate={() => setPicker("a")} allowUpload />
-          <div>
-            <ProfileForm label="Custom Candidate" value={pb} onChange={setPb} accent="purple"
-              onPickTemplate={() => setPicker("b")} />
-            <label className="mt-3 flex items-center gap-2 text-xs rounded-xl px-3 py-2"
-              style={{ background: "rgba(255,255,255,0.035)", color: "rgba(255,255,255,0.72)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <input type="checkbox" checked={includeCustomCandidate} onChange={e => setIncludeCustomCandidate(e.target.checked)} />
-              Include this custom candidate in the Find Top 3 pool
-            </label>
+          <div className="rounded-2xl p-5 flex flex-col gap-3"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(168,85,247,0.2)" }}>
+            <p className="text-sm font-bold" style={{ color: "#a855f7" }}>What can I upload?</p>
+            <div className="grid grid-cols-1 gap-2">
+              {[
+                ["App bio", "Your Hinge, Bumble, Tinder, or personal dating-app bio."],
+                ["Prompt answers", "Short answers like two truths, green flags, ideal Sunday, or dating intentions."],
+                ["Self intro", "A quick paragraph about values, interests, style, and what you are looking for."],
+                ["Chat tone", "Optional: a small sample of how you text, if you want the persona replica to sound closer."],
+              ].map(([label, body]) => (
+                <div key={label} className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <p className="text-xs font-semibold mb-1" style={{ color: "#f5f0ff" }}>{label}</p>
+                  <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.62)" }}>{body}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs mt-auto" style={{ color: "rgba(255,255,255,0.55)" }}>
+              Candidate profiles come from the pool. You choose filters, Ditto does the virtual dating.
+            </p>
           </div>
         </div>
 
         <ScoutResults
           matches={scoutResults}
-          onUse={profile => setPb(profile)}
           onRun={profile => runMatchWith(profile)}
         />
 
@@ -695,10 +701,6 @@ export default function Home() {
           <button onClick={scoutPool} disabled={loadingTop || loadingPair || scouting} className="text-sm px-5 py-3 rounded-xl"
             style={{ background: "rgba(168,85,247,0.14)", color: "#c084fc", border: "1px solid rgba(168,85,247,0.32)" }}>
             {scouting ? "Scanning Leads..." : "Preview Candidate Leads"}
-          </button>
-          <button onClick={() => runMatchWith(pb)} disabled={loadingTop || loadingPair || scouting} className="text-sm px-5 py-3 rounded-xl"
-            style={{ background: "rgba(255,255,255,0.055)", color: "rgba(255,255,255,0.78)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            Run Custom Pair
           </button>
         </div>
 
